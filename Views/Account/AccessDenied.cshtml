@@ -1,0 +1,23 @@
+@{
+    ViewData["Title"] = "Access Restricted";
+}
+
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 text-center">
+        <div class="p-4 bg-white rounded-3 shadow-sm border">
+            <div class="text-danger fs-1 mb-3">
+                <i class="bi bi-shield-slash-fill"></i>
+            </div>
+            <h3 class="fw-bold text-dark">Access Restricted</h3>
+            <p class="text-muted">You do not have the required role or permissions to view this secure portal.</p>
+            <div class="d-flex justify-content-center gap-2 mt-4">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-outline-primary">
+                    <i class="bi bi-house me-1"></i> Customer Store
+                </a>
+                <a asp-controller="Account" asp-action="AdminLogin" class="btn btn-primary">
+                    <i class="bi bi-shield-lock me-1"></i> Admin Login
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,111 @@
+@model IEnumerable<GaneshEnterprises.Models.Order>
+@{
+    ViewData["Title"] = "Admin - Manage Orders";
+    var currentStatus = ViewBag.CurrentStatus as string;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-1">&larr; Back to Admin Dashboard</a>
+        <h2 class="fw-bold text-dark mb-0"><i class="bi bi-receipt-cutoff text-warning me-2"></i>Orders Pipeline (All 20 Records)</h2>
+        <p class="text-muted small mb-0">Review customer and retailer bulk requisitions, update order statuses, and verify billing.</p>
+    </div>
+    <a asp-action="ManageTracking" class="btn btn-primary fw-bold">
+        <i class="bi bi-truck me-1"></i> Update Shipment Tracking
+    </a>
+</div>
+
+<!-- Status Filter Pills -->
+<div class="ge-card mb-4 p-3">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="small fw-bold text-muted me-2"><i class="bi bi-filter me-1"></i>Filter by Status:</span>
+        <a asp-action="Orders" class="btn btn-sm @(string.IsNullOrEmpty(currentStatus) ? "btn-dark" : "btn-light border")">All (20)</a>
+        <a asp-action="Orders" asp-route-statusFilter="Pending" class="btn btn-sm @(currentStatus == "Pending" ? "btn-warning text-dark" : "btn-outline-warning")">Pending</a>
+        <a asp-action="Orders" asp-route-statusFilter="Processing" class="btn btn-sm @(currentStatus == "Processing" ? "btn-primary" : "btn-outline-primary")">Processing</a>
+        <a asp-action="Orders" asp-route-statusFilter="Shipped" class="btn btn-sm @(currentStatus == "Shipped" ? "btn-info text-dark" : "btn-outline-info")">Shipped</a>
+        <a asp-action="Orders" asp-route-statusFilter="Delivered" class="btn btn-sm @(currentStatus == "Delivered" ? "btn-success" : "btn-outline-success")">Delivered</a>
+    </div>
+</div>
+
+<div class="ge-card">
+    <div class="table-responsive">
+        <table class="ge-table table-hover">
+            <thead>
+                <tr>
+                    <th>Ref #</th>
+                    <th>Customer / Business</th>
+                    <th>Order Type</th>
+                    <th>Product &amp; Size</th>
+                    <th>Quantity</th>
+                    <th>Unit Rate</th>
+                    <th>Total Value</th>
+                    <th>Order Status</th>
+                    <th class="text-end">Update Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong class="text-primary">@(order.OrderNumber ?? $"#GE-{order.Id}")</strong>
+                            <small class="text-muted d-block">@order.OrderDate.ToString("dd-MMM-yyyy")</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">@order.CustomerName</div>
+                            <small class="text-muted"><i class="bi bi-telephone me-1"></i>@order.ContactNumber</small>
+                        </td>
+                        <td>
+                            @if (order.OrderType == "Retailer" || order.RetailerId != null)
+                            {
+                                <span class="badge bg-purple text-white" style="background-color: #9333ea;">
+                                    <i class="bi bi-shop me-1"></i> Retailer Bulk
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-person me-1"></i> Customer
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">@(order.Product?.Name ?? "Bag")</div>
+                            <small class="text-muted">Size: @(order.Product?.BagSize.ToString() ?? "-")</small>
+                        </td>
+                        <td>
+                            <strong>@order.Quantity.ToString("N0")</strong> <small class="text-muted">pcs</small>
+                        </td>
+                        <td>
+                            <span>₹@order.UnitPrice.ToString("F2")</span>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-success fs-6">₹@order.TotalAmount.ToString("N2")</span>
+                        </td>
+                        <td>
+                            <span class="badge @(order.Status == "Delivered" ? "bg-success" : order.Status == "Shipped" ? "bg-info text-dark" : order.Status == "Processing" ? "bg-primary" : "bg-warning text-dark")">
+                                @order.Status
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <form asp-action="UpdateOrderStatus" asp-route-id="@order.Id" method="post" class="d-inline-flex gap-1">
+                                <select name="status" class="form-select form-select-sm" style="width: 125px;">
+                                    <!option value="Pending" @(order.Status == "Pending" ? "selected" : "")>Pending</!option>
+                                    <!option value="Processing" @(order.Status == "Processing" ? "selected" : "")>Processing</!option>
+                                    <!option value="Shipped" @(order.Status == "Shipped" ? "selected" : "")>Shipped</!option>
+                                    <!option value="Delivered" @(order.Status == "Delivered" ? "selected" : "")>Delivered</!option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-primary" title="Update status">
+                                    <i class="bi bi-check2"></i>
+                                </button>
+                                <a asp-action="ManageTracking" asp-route-orderId="@order.Id" class="btn btn-sm btn-outline-secondary" title="Manage Consignment Tracking">
+                                    <i class="bi bi-geo-alt"></i>
+                                </a>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

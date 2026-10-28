@@ -1,0 +1,131 @@
+@model GaneshEnterprises.Models.OrderTrackingViewModel
+@{
+    ViewData["Title"] = "Track Consignment - Ganesh Enterprises";
+    var query = ViewBag.SearchQuery as string;
+}
+
+<div class="row justify-content-center py-3">
+    <div class="col-lg-9">
+        <div class="text-center mb-4">
+            <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-1 rounded-pill mb-2">
+                <i class="bi bi-truck me-1"></i> Public Order Tracking
+            </span>
+            <h2 class="fw-bold text-dark">Live Consignment Tracking</h2>
+            <p class="text-muted small">Enter your Order Reference Number, Consignment Code, or Contact Phone to view dispatch status.</p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="ge-card shadow-sm p-3 mb-4">
+            <form asp-action="Tracking" method="get" class="row g-2 align-items-center">
+                <div class="col-md-9">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="query" value="@query" class="form-control" 
+                               placeholder="Enter Order # (e.g. 1 or GE-ORD-101), Tracking # (e.g. TRK-GE-84521), or Phone..." required />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary fw-bold w-100">
+                        <i class="bi bi-geo-alt me-1"></i> Track Order
+                    </button>
+                </div>
+            </form>
+            <div class="mt-2 text-center">
+                <small class="text-muted">
+                    Quick test codes: <code>TRK-GE-84521</code> &bull; <code>TRK-GE-84522</code> &bull; <code>9876543210</code> &bull; Order ID: <code>1</code>
+                </small>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(query))
+        {
+            @if (Model.TrackingMilestones.Any() || Model.SelectedOrder != null)
+            {
+                <div class="ge-card shadow-sm border-0 mb-4">
+                    <div class="ge-card-header bg-light d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-box-seam text-primary me-2"></i>Consignment Details</h5>
+                            <small class="text-muted">Search Query: <strong>@query</strong></small>
+                        </div>
+                        @if (Model.SelectedOrder != null)
+                        {
+                            <span class="badge @(Model.SelectedOrder.Status == "Delivered" ? "bg-success" : Model.SelectedOrder.Status == "Shipped" ? "bg-info text-dark" : "bg-warning text-dark") fs-6">
+                                @Model.SelectedOrder.Status
+                            </span>
+                        }
+                    </div>
+                    <div class="ge-card-body p-4">
+                        @if (Model.SelectedOrder != null)
+                        {
+                            <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+                                <div class="col-sm-4">
+                                    <span class="text-muted small d-block">Recipient / Customer:</span>
+                                    <strong class="text-dark">@Model.SelectedOrder.CustomerName</strong>
+                                    <small class="text-muted d-block"><i class="bi bi-telephone me-1"></i>@Model.SelectedOrder.ContactNumber</small>
+                                </div>
+                                <div class="col-sm-4">
+                                    <span class="text-muted small d-block">Plastic Bag Product:</span>
+                                    <strong class="text-dark">@(Model.SelectedOrder.Product?.Name ?? "Plastic Bags")</strong>
+                                    <small class="text-muted d-block">Size: @(Model.SelectedOrder.Product?.BagSize.ToString() ?? "-") &bull; @Model.SelectedOrder.Quantity.ToString("N0") pcs</small>
+                                </div>
+                                <div class="col-sm-4">
+                                    <span class="text-muted small d-block">Order Reference:</span>
+                                    <strong class="text-primary">@(Model.SelectedOrder.OrderNumber ?? $"#GE-{Model.SelectedOrder.Id}")</strong>
+                                    <small class="text-muted d-block">Date: @Model.SelectedOrder.OrderDate.ToString("dd-MMM-yyyy")</small>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Timeline -->
+                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-signpost-split text-accent me-2"></i>Tracking History &amp; Milestones</h6>
+                        @if (Model.TrackingMilestones.Any())
+                        {
+                            <div class="timeline">
+                                @foreach (var milestone in Model.TrackingMilestones)
+                                {
+                                    <div class="p-3 mb-3 border-start border-4 border-success bg-white rounded shadow-sm">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <h6 class="fw-bold text-dark mb-0">
+                                                <i class="bi bi-check-circle-fill text-success me-2"></i>@milestone.CurrentStatus
+                                            </h6>
+                                            <span class="badge bg-light text-muted border">@milestone.UpdatedAt.ToString("dd MMM yyyy, hh:mm tt")</span>
+                                        </div>
+                                        <div class="text-secondary small mb-2">
+                                            <i class="bi bi-geo-alt-fill text-danger me-1"></i> Location: <strong>@milestone.CurrentLocation</strong> &bull; 
+                                            Carrier: <strong>@milestone.CarrierName</strong> &bull; 
+                                            Tracking #: <code>@milestone.TrackingNumber</code>
+                                        </div>
+                                        @if (milestone.EstimatedDelivery.HasValue)
+                                        {
+                                            <div class="small text-info fw-semibold mb-1">
+                                                <i class="bi bi-calendar-event me-1"></i> Estimated Delivery: @milestone.EstimatedDelivery.Value.ToString("dd-MMM-yyyy")
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrEmpty(milestone.Notes))
+                                        {
+                                            <p class="small text-muted mb-0"><i class="bi bi-info-circle me-1"></i> @milestone.Notes</p>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info small mb-0">
+                                <i class="bi bi-info-circle me-1"></i> Order recorded. The factory dispatch milestone will appear here once the consignment is assigned to the logistics carrier.
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="ge-card text-center py-5 shadow-sm">
+                    <i class="bi bi-search fs-1 text-muted d-block mb-2"></i>
+                    <h5 class="fw-bold text-dark">No Tracking Record Found</h5>
+                    <p class="text-muted small">We could not locate an active consignment matching '<strong>@query</strong>'. Please verify the order reference or phone number.</p>
+                </div>
+            }
+        }
+    </div>
+</div>

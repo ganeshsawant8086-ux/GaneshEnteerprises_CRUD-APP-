@@ -1,0 +1,72 @@
+@model IEnumerable<GaneshEnterprises.Models.OrderTracking>
+@{
+    ViewData["Title"] = "Admin - Consignment Tracking Master";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-1">&larr; Back to Admin Dashboard</a>
+        <h2 class="fw-bold text-dark mb-0"><i class="bi bi-truck text-danger me-2"></i>Consignment Tracking Master (Admin Managed)</h2>
+        <p class="text-muted small mb-0">Record factory dispatch, transit hubs, carrier dispatches, and delivery confirmations.</p>
+    </div>
+    <a asp-action="ManageTracking" class="btn btn-danger fw-bold">
+        <i class="bi bi-plus-circle me-1"></i> Add / Log Tracking Milestone
+    </a>
+</div>
+
+<div class="ge-card">
+    <div class="ge-card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-dark">Active Consignment Milestones</h5>
+        <span class="badge bg-danger">@Model.Count() Logged Milestones</span>
+    </div>
+    <div class="table-responsive">
+        <table class="ge-table table-hover">
+            <thead>
+                <tr>
+                    <th>Tracking #</th>
+                    <th>Order #</th>
+                    <th>Recipient Customer / Store</th>
+                    <th>Current Milestone Status</th>
+                    <th>Current Location / Hub</th>
+                    <th>Logistics Carrier</th>
+                    <th>Est. Delivery</th>
+                    <th>Last Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong class="text-danger font-monospace">@t.TrackingNumber</strong>
+                        </td>
+                        <td>
+                            <a asp-action="Orders" class="fw-bold text-primary">#@(t.OrderId)</a>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">@(t.Order?.CustomerName ?? "-")</div>
+                            <small class="text-muted">@(t.Order?.Product?.Name ?? "-") &bull; @(t.Order?.Quantity.ToString("N0") ?? "-") pcs</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                <i class="bi bi-geo-alt-fill me-1"></i> @t.CurrentStatus
+                            </span>
+                        </td>
+                        <td>
+                            <strong>@t.CurrentLocation</strong>
+                        </td>
+                        <td>
+                            <span>@t.CarrierName</span>
+                        </td>
+                        <td>
+                            <div>@(t.EstimatedDelivery?.ToString("dd-MMM-yyyy") ?? "Pending")</div>
+                        </td>
+                        <td>
+                            <small class="text-muted">@t.UpdatedAt.ToString("dd-MMM HH:mm")</small>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

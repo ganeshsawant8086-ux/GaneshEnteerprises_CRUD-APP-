@@ -1,0 +1,91 @@
+@model IEnumerable<GaneshEnterprises.Models.Product>
+@{
+    ViewData["Title"] = "Admin - Product Pricing & Margins";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-1">&larr; Back to Admin Dashboard</a>
+        <h2 class="fw-bold text-dark mb-0"><i class="bi bi-currency-rupee text-primary me-2"></i>Product Pricing &amp; Margin Master</h2>
+        <p class="text-muted small mb-0">Control standard customer retail prices, wholesale dealer rates, and retailer margins.</p>
+    </div>
+    <a asp-action="CreateProduct" class="btn btn-primary fw-bold">
+        <i class="bi bi-plus-circle me-1"></i> Add New Product
+    </a>
+</div>
+
+<div class="ge-card">
+    <div class="ge-card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-dark">Price Matrix &amp; Inventory</h5>
+        <span class="badge bg-dark">@Model.Count() Specifications</span>
+    </div>
+    <div class="table-responsive">
+        <table class="ge-table table-hover">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Bag Size</th>
+                    <th class="text-primary">Wholesale Retailer Price</th>
+                    <th class="text-dark">Customer Price (MRP)</th>
+                    <th class="text-success fw-bold">Retailer Margin (₹)</th>
+                    <th class="text-success fw-bold">Margin (%)</th>
+                    <th>Warehouse Stock</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">@p.Name</div>
+                            <small class="text-muted text-truncate d-inline-block" style="max-width: 200px;">@p.Description</small>
+                        </td>
+                        <td>
+                            @if (p.BagSize == GaneshEnterprises.Models.BagSize.Small)
+                            {
+                                <span class="badge-bag-small">Small</span>
+                            }
+                            else if (p.BagSize == GaneshEnterprises.Models.BagSize.Medium)
+                            {
+                                <span class="badge-bag-medium">Medium</span>
+                            }
+                            else
+                            {
+                                <span class="badge-bag-large">Large</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="fw-bold text-primary fs-6">₹@p.RetailerPrice.ToString("F2")</span>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-dark fs-6">₹@p.CustomerPrice.ToString("F2")</span>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-success">+ ₹@p.Margin.ToString("F2")</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">
+                                @p.MarginPercentage.ToString("F1")%
+                            </span>
+                        </td>
+                        <td>
+                            <strong>@p.StockQuantity.ToString("N0")</strong> <small class="text-muted">units</small>
+                        </td>
+                        <td>
+                            <span class="badge @(p.IsAvailable ? "bg-success" : "bg-secondary")">
+                                @(p.IsAvailable ? "Active" : "Disabled")
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="EditProduct" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary fw-semibold">
+                                <i class="bi bi-pencil-square me-1"></i> Edit Pricing
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

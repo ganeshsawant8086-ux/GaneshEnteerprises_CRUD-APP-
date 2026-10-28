@@ -1,0 +1,86 @@
+@model GaneshEnterprises.Models.OrderTracking
+@{
+    ViewData["Title"] = "Admin - Log Consignment Tracking Update";
+}
+
+<div class="row justify-content-center py-3">
+    <div class="col-lg-8">
+        <div class="mb-4">
+            <a asp-action="Tracking" class="btn btn-outline-secondary btn-sm mb-2">&larr; Back to Tracking Master</a>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Log Consignment Tracking Update</h2>
+            <p class="text-muted small">Update shipping milestones and dispatch records visible to retailers and customers.</p>
+        </div>
+
+        <div class="ge-card shadow-sm">
+            <div class="ge-card-header bg-light">
+                <h5 class="mb-0 fw-bold text-dark">Consignment Milestone Entry</h5>
+            </div>
+            <div class="ge-card-body p-4">
+                <form asp-action="ManageTracking" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="OrderId" class="form-label fw-bold">Select Order Record</label>
+                        <select asp-for="OrderId" class="form-select" asp-items="ViewBag.Orders"></select>
+                        <span asp-validation-for="OrderId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="TrackingNumber" class="form-label fw-bold"></label>
+                            <input asp-for="TrackingNumber" class="form-control font-monospace" placeholder="e.g. TRK-GE-84912" />
+                            <span asp-validation-for="TrackingNumber" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="CurrentStatus" class="form-label fw-bold"></label>
+                            <select asp-for="CurrentStatus" class="form-select">
+                                <option value="Order Packed & Dispatched">Order Packed & Dispatched</option>
+                                <option value="In Transit - Out for Local Delivery">In Transit - Out for Local Delivery</option>
+                                <option value="Reached Destination Logistics Hub">Reached Destination Logistics Hub</option>
+                                <option value="Delivered to Customer Premises">Delivered to Customer Premises</option>
+                                <option value="Consignment Delayed (Weather/Transit)">Consignment Delayed (Weather/Transit)</option>
+                            </select>
+                            <span asp-validation-for="CurrentStatus" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="CurrentLocation" class="form-label fw-bold"></label>
+                            <input asp-for="CurrentLocation" class="form-control" placeholder="e.g. Pune Regional Logistics Facility, Platform 3" />
+                            <span asp-validation-for="CurrentLocation" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="CarrierName" class="form-label fw-bold"></label>
+                            <input asp-for="CarrierName" class="form-control" placeholder="e.g. Ganesh Express Logistics / BlueDart" />
+                            <span asp-validation-for="CarrierName" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="EstimatedDelivery" class="form-label fw-bold"></label>
+                        <input asp-for="EstimatedDelivery" class="form-control" type="date" />
+                        <span asp-validation-for="EstimatedDelivery" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label fw-bold"></label>
+                        <textarea asp-for="Notes" class="form-control" rows="2" placeholder="Driver details, vehicle dispatch number, or delivery notes..."></textarea>
+                        <span asp-validation-for="Notes" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a asp-action="Tracking" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-danger px-4 fw-bold">
+                            <i class="bi bi-geo-alt me-1"></i> Log Tracking Milestone
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

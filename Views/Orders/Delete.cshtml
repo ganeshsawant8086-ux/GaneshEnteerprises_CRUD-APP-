@@ -1,0 +1,67 @@
+@model GaneshEnterprises.Models.Order
+
+@{
+    ViewData["Title"] = "Delete Order Confirmation";
+    var totalAmount = Model.Product != null ? Model.Product.Price * Model.Quantity : 0;
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="mb-4">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-2">
+                <i class="bi bi-arrow-left me-1"></i> Back to Orders List
+            </a>
+            <h2 class="fw-bold text-danger mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Order Confirmation</h2>
+            <p class="text-muted small">Please verify the details below before permanently removing this order.</p>
+        </div>
+
+        <div class="ge-card border-danger-subtle">
+            <div class="ge-card-header bg-danger-subtle text-danger-emphasis">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-trash3 me-2"></i>Order Summary (#@Model.Id)</h5>
+            </div>
+            <div class="ge-card-body p-4">
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Customer Name</label>
+                    <h4 class="fw-bold text-dark mb-0">@Model.CustomerName</h4>
+                    <span class="text-muted small"><i class="bi bi-telephone me-1"></i>@Model.ContactNumber</span>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <label class="text-muted small fw-bold text-uppercase d-block mb-1">Product Ordered</label>
+                        <span class="fw-semibold text-dark">@(Model.Product?.Name ?? "Item #" + Model.ProductId)</span>
+                        @if (Model.Product != null)
+                        {
+                            <span class="d-block small text-muted">Bag Size: @Model.Product.BagSize</span>
+                        }
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small fw-bold text-uppercase d-block mb-1">Quantity</label>
+                        <span class="fw-bold text-dark fs-5">@Model.Quantity.ToString("N0")</span> <small class="text-muted">pieces</small>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <label class="text-muted small fw-bold text-uppercase d-block mb-1">Order Date</label>
+                        <span class="text-dark">@Model.OrderDate.ToString("dd-MMM-yyyy")</span>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small fw-bold text-uppercase d-block mb-1">Total Amount</label>
+                        <span class="fw-bold text-danger fs-5">₹@totalAmount.ToString("N2")</span>
+                    </div>
+                </div>
+
+                <form asp-action="Delete" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-danger px-4 fw-bold">
+                            <i class="bi bi-trash3-fill me-1"></i> Confirm &amp; Delete Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

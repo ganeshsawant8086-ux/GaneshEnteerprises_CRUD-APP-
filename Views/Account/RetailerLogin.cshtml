@@ -1,0 +1,106 @@
+@model GaneshEnterprises.Models.RetailerLoginViewModel
+@{
+    ViewData["Title"] = "Retailer Login - Wholesale & Margins Portal";
+}
+
+<div class="row justify-content-center py-4">
+    <div class="col-md-6 col-lg-5">
+        <div class="text-center mb-4">
+            <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #0d9488, #1e3a8a); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3);">
+                <i class="bi bi-shop text-white fs-2"></i>
+            </div>
+            <h2 class="fw-bold text-dark mt-3 mb-1">Retailer Business Portal</h2>
+            <p class="text-muted small">Access wholesale dealer prices, calculate retail selling margins, and track consignments.</p>
+        </div>
+
+        <div class="ge-card shadow-sm border-0">
+            <!-- Mode Switcher Tabs (Password Login vs OTP Login) -->
+            <div class="p-3 bg-light border-bottom">
+                <ul class="nav nav-pills nav-fill" id="retailerLoginTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-bold py-2" id="password-tab" data-bs-toggle="pill" data-bs-target="#password-login" type="button" role="tab" onclick="document.getElementById('loginModeInput').value='password'">
+                            <i class="bi bi-shield-lock me-1"></i> Password Login
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-bold py-2" id="otp-tab" data-bs-toggle="pill" data-bs-target="#otp-login" type="button" role="tab" onclick="document.getElementById('loginModeInput').value='otp'">
+                            <i class="bi bi-phone me-1"></i> OTP Login
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="ge-card-body p-4">
+                <form asp-action="RetailerLogin" method="post" id="retailerLoginForm">
+                    <input type="hidden" asp-for="LoginMode" id="loginModeInput" value="password" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+
+                    <!-- Email / Phone Identifier -->
+                    <div class="mb-3">
+                        <label asp-for="EmailOrPhone" class="form-label fw-bold">Registered Retailer Email or Mobile</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white text-muted"><i class="bi bi-envelope-at"></i></span>
+                            <input asp-for="EmailOrPhone" class="form-control" placeholder="e.g. om.retail@gmail.com or 9820112233" />
+                        </div>
+                        <span asp-validation-for="EmailOrPhone" class="text-danger small"></span>
+                        <small class="text-muted d-block mt-1">Example: <code>om.retail@gmail.com</code> or <code>shreeganesh.traders@gmail.com</code></small>
+                    </div>
+
+                    <div class="tab-content" id="loginTabContent">
+                        <!-- Password Login Panel -->
+                        <div class="tab-pane fade show active" id="password-login" role="tabpanel">
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label fw-bold">Retailer Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted"><i class="bi bi-key"></i></span>
+                                    <input asp-for="Password" class="form-control" type="password" placeholder="Password@123" />
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                                <small class="text-muted d-block mt-1">Default Retailer Password: <code>Password@123</code></small>
+                            </div>
+                        </div>
+
+                        <!-- OTP Login Panel -->
+                        <div class="tab-pane fade" id="otp-login" role="tabpanel">
+                            <div class="mb-3">
+                                <label asp-for="OtpCode" class="form-label fw-bold">SMS Verification Code (OTP)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white text-muted"><i class="bi bi-chat-left-dots"></i></span>
+                                    <input asp-for="OtpCode" class="form-control text-center fs-5 fw-bold letter-spacing-2" maxlength="6" placeholder="123456" />
+                                </div>
+                                <span asp-validation-for="OtpCode" class="text-danger small"></span>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <small class="text-muted">Demo Test OTP: <code>123456</code></small>
+                                    <span class="badge bg-success-subtle text-success border">Instant Demo OTP</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-ge-accent w-100 py-2 fw-bold mt-2 shadow-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Retailer Portal
+                    </button>
+
+                    <!-- Down side Forgot Password link -->
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <a asp-action="ForgotPassword" class="text-primary text-decoration-none small fw-semibold">
+                            <i class="bi bi-question-circle me-1"></i> Forgot Password?
+                        </a>
+                        <span class="text-muted small">Need Retailer Account? Contact Admin</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <span class="text-muted small">Not a retailer?</span>
+            <a asp-controller="Home" asp-action="Index" class="text-primary small fw-semibold text-decoration-none ms-1">
+                Go to Customer Store (No Login Required) &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

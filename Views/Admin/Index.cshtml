@@ -1,0 +1,181 @@
+@model IEnumerable<GaneshEnterprises.Models.Order>
+@{
+    ViewData["Title"] = "Admin Control Dashboard";
+    var recentRetailers = ViewBag.RecentRetailers as List<GaneshEnterprises.Models.Retailer> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold px-3 py-1 rounded-pill mb-1">
+            <i class="bi bi-shield-lock-fill me-1"></i> Master Enterprise Administration
+        </span>
+        <h2 class="fw-bold text-dark mb-0">Admin Control Center</h2>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Products" class="btn btn-outline-primary fw-semibold btn-sm">
+            <i class="bi bi-currency-rupee me-1"></i> Manage Pricing &amp; Margins
+        </a>
+        <a asp-action="Retailers" class="btn btn-outline-success fw-semibold btn-sm">
+            <i class="bi bi-people-fill me-1"></i> Manage Retailers (@ViewBag.TotalRetailers)
+        </a>
+        <a asp-action="ManageTracking" class="btn btn-primary fw-bold btn-sm">
+            <i class="bi bi-geo-alt-fill me-1"></i> Update Tracking Record
+        </a>
+    </div>
+</div>
+
+<!-- Admin KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-widget">
+            <div>
+                <div class="stat-value text-primary">@ViewBag.TotalProducts</div>
+                <p class="stat-label">Products</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-widget">
+            <div>
+                <div class="stat-value text-info">@(((long)ViewBag.TotalStock).ToString("N0"))</div>
+                <p class="stat-label">Total Stock</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-widget">
+            <div>
+                <div class="stat-value text-success">@ViewBag.TotalRetailers</div>
+                <p class="stat-label">Retailers (10)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-widget">
+            <div>
+                <div class="stat-value text-warning">@ViewBag.TotalOrders</div>
+                <p class="stat-label">Orders (20)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-widget">
+            <div>
+                <div class="stat-value text-danger">@ViewBag.PendingOrders</div>
+                <p class="stat-label">Pending</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-widget">
+            <div>
+                <div class="stat-value text-dark" style="font-size: 1.4rem;">₹@(((decimal)ViewBag.TotalRevenue).ToString("N0"))</div>
+                <p class="stat-label">Revenue</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Navigation Bar for Admin Modules -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a asp-action="Products" class="ge-card p-3 d-block text-decoration-none border-start border-4 border-primary">
+            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-tags text-primary me-2"></i>Pricing &amp; Margins</h6>
+            <small class="text-muted">Control Customer MRP vs Retailer wholesale rates</small>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-action="Retailers" class="ge-card p-3 d-block text-decoration-none border-start border-4 border-success">
+            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-shop text-success me-2"></i>Retailer Accounts</h6>
+            <small class="text-muted">Manage 10 registered wholesale dealers</small>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-action="Orders" class="ge-card p-3 d-block text-decoration-none border-start border-4 border-warning">
+            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-receipt text-warning me-2"></i>Customer &amp; Bulk Orders</h6>
+            <small class="text-muted">Manage all 20 active order shipments</small>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a asp-action="Tracking" class="ge-card p-3 d-block text-decoration-none border-start border-4 border-danger">
+            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-truck text-danger me-2"></i>Consignment Tracking</h6>
+            <small class="text-muted">Only Admin manages tracking milestones</small>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Orders & Retailers Grid -->
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="ge-card">
+            <div class="ge-card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Recent Orders Pipeline</h5>
+                <a asp-action="Orders" class="btn btn-sm btn-light border fw-semibold">View All 20 Orders</a>
+            </div>
+            <div class="table-responsive">
+                <table class="ge-table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Ref #</th>
+                            <th>Customer / Store</th>
+                            <th>Product</th>
+                            <th>Qty</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model)
+                        {
+                            <tr>
+                                <td><strong>@(order.OrderNumber ?? $"#GE-{order.Id}")</strong></td>
+                                <td>
+                                    <div class="fw-bold text-dark">@order.CustomerName</div>
+                                    <small class="text-muted">@order.ContactNumber</small>
+                                </td>
+                                <td>@(order.Product?.Name ?? "-")</td>
+                                <td>@order.Quantity.ToString("N0")</td>
+                                <td class="fw-bold text-success">₹@order.TotalAmount.ToString("N2")</td>
+                                <td>
+                                    <span class="badge @(order.Status == "Delivered" ? "bg-success" : order.Status == "Shipped" ? "bg-info text-dark" : "bg-warning text-dark")">
+                                        @order.Status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Retailers List -->
+    <div class="col-lg-4">
+        <div class="ge-card">
+            <div class="ge-card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-people text-success me-2"></i>Retailer Partners</h5>
+                <a asp-action="Retailers" class="btn btn-sm btn-light border fw-semibold">All 10</a>
+            </div>
+            <div class="list-group list-group-flush">
+                @foreach (var ret in recentRetailers)
+                {
+                    <div class="list-group-item p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong class="text-dark">@ret.BusinessName</strong>
+                            <span class="badge @(ret.IsActive ? "bg-success-subtle text-success border border-success-subtle" : "bg-danger-subtle text-danger")">
+                                @(ret.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </div>
+                        <div class="small text-muted">
+                            <span><i class="bi bi-person me-1"></i>@ret.OwnerName</span> &bull; 
+                            <span><i class="bi bi-geo-alt me-1"></i>@ret.City</span>
+                        </div>
+                        <div class="small text-secondary mt-1">
+                            <i class="bi bi-envelope me-1"></i><code>@ret.Email</code>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

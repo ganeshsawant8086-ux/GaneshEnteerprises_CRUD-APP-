@@ -1,0 +1,308 @@
+@using Microsoft.Extensions.Options
+@using GaneshEnterprises.Models
+@inject IOptions<EnterpriseInfo> EnterpriseOptions
+@{
+    var enterprise = EnterpriseOptions.Value;
+    var isAuthenticated = User.Identity != null && User.Identity.IsAuthenticated;
+    var isAdmin = isAuthenticated && User.IsInRole("Admin");
+    var isRetailer = isAuthenticated && User.IsInRole("Retailer");
+    var businessName = User.FindFirst("BusinessName")?.Value ?? User.Identity?.Name ?? "User";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Ganesh Enterprises | Plastic Bag Manufacturer</title>
+    
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <!-- Site CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <!-- Top Branding & Portal Switcher Bar -->
+    <header class="brand-topbar">
+        <div class="container">
+            <div class="d-flex flex-wrap justify-content-between align-items-center py-2 gap-3">
+                <!-- Brand Title and Custom SVG Logo -->
+                <div class="d-flex align-items-center gap-3">
+                    <a asp-controller="Home" asp-action="Index" class="text-decoration-none">
+                        <div class="brand-logo-container" style="filter: drop-shadow(0 2px 8px rgba(0,0,0,0.25));">
+                            <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ganesh Enterprises Logo">
+                                <rect x="8" y="18" width="48" height="42" rx="7" fill="url(#bagGradient)" stroke="#ffffff" stroke-width="2.5"/>
+                                <path d="M22 18V13C22 8.58172 25.5817 5 30 5H34C38.4183 5 42 8.58172 42 13V18" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+                                <path d="M23 35C23 30.0294 27.0294 26 32 26C35.5 26 38.5 28 39.8 31" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+                                <path d="M39.8 39C38.5 42 35.5 44 32 44C27.0294 44 23 39.9706 23 35" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+                                <path d="M41 35H32" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+                                <circle cx="20" cy="51" r="2.5" fill="#38bdf8"/>
+                                <circle cx="32" cy="51" r="3" fill="#fbbf24"/>
+                                <circle cx="44" cy="51" r="3.5" fill="#c084fc"/>
+                                <defs>
+                                    <linearGradient id="bagGradient" x1="8" y1="18" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#0f766e" />
+                                        <stop offset="1" stop-color="#1e3a8a" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                    </a>
+                    <div>
+                        <a asp-controller="Home" asp-action="Index" class="text-decoration-none">
+                            <h1 class="brand-title mb-0">GANESH ENTERPRISES</h1>
+                        </a>
+                        <p class="brand-subtitle mb-0">Plastic Bags in Small, Medium &amp; Large Sizes • Manufacturer &amp; Wholesale</p>
+                    </div>
+                </div>
+
+                <!-- Up-side Portal Chooser / Account Actions -->
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <!-- Customer Portal (Public / No Login) -->
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-sm btn-outline-light border-opacity-50">
+                        <i class="bi bi-cart3 text-warning me-1"></i> Customer Store <span class="badge bg-secondary ms-1 small">No Login</span>
+                    </a>
+
+                    <!-- Retailer Portal Link -->
+                    @if (isRetailer)
+                    {
+                        <a asp-controller="RetailerPortal" asp-action="Index" class="btn btn-sm btn-warning text-dark fw-bold">
+                            <i class="bi bi-shop me-1"></i> @businessName (Retailer)
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="RetailerLogin" class="btn btn-sm btn-outline-warning text-warning fw-semibold">
+                            <i class="bi bi-shop me-1"></i> Retailer Portal
+                        </a>
+                    }
+
+                    <!-- Admin Portal Link -->
+                    @if (isAdmin)
+                    {
+                        <a asp-controller="Admin" asp-action="Index" class="btn btn-sm btn-danger fw-bold shadow-sm">
+                            <i class="bi bi-shield-lock-fill me-1"></i> Admin Center
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="AdminLogin" class="btn btn-sm btn-outline-light border-opacity-50 text-white-50">
+                            <i class="bi bi-shield-lock me-1"></i> Admin Portal
+                        </a>
+                    }
+
+                    <!-- Logout Button if authenticated -->
+                    @if (isAuthenticated)
+                    {
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-dark text-white-50" title="Sign Out">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Navigation Bar -->
+    <nav class="navbar navbar-expand-lg ge-navbar sticky-top">
+        <div class="container">
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#geNavContent" aria-controls="geNavContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="geNavContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" 
+                           asp-controller="Home" asp-action="Index">
+                            <i class="bi bi-house-door me-1"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Products" ? "active" : "")" 
+                           asp-controller="Products" asp-action="Index">
+                            <i class="bi bi-boxes me-1"></i> Products Catalog
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Orders" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" 
+                           asp-controller="Orders" asp-action="Index">
+                            <i class="bi bi-receipt me-1"></i> Customer Orders
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Tracking" ? "active" : "")" 
+                           asp-controller="Home" asp-action="Tracking">
+                            <i class="bi bi-truck me-1 text-primary"></i> Track Order
+                        </a>
+                    </li>
+
+                    @if (isRetailer)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link text-success fw-bold" asp-controller="RetailerPortal" asp-action="Index">
+                                <i class="bi bi-tags-fill me-1"></i> Wholesale Rates &amp; Margins
+                            </a>
+                        </li>
+                    }
+
+                    @if (isAdmin)
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-danger fw-bold" href="#" id="adminDrop" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-gear-fill me-1"></i> Admin Menu
+                            </a>
+                            <ul class="dropdown-menu shadow border-0" aria-labelledby="adminDrop">
+                                <li><a class="dropdown-item fw-bold" asp-controller="Admin" asp-action="Index"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
+                                <li><a class="dropdown-item" asp-controller="Admin" asp-action="Products"><i class="bi bi-currency-rupee me-2 text-primary"></i> Manage Pricing &amp; Margins</a></li>
+                                <li><a class="dropdown-item" asp-controller="Admin" asp-action="Retailers"><i class="bi bi-shop me-2 text-success"></i> Manage Retailers (10)</a></li>
+                                <li><a class="dropdown-item" asp-controller="Admin" asp-action="Orders"><i class="bi bi-receipt me-2 text-warning"></i> Manage Orders (20)</a></li>
+                                <li><a class="dropdown-item" asp-controller="Admin" asp-action="Tracking"><i class="bi bi-truck me-2 text-danger"></i> Manage Order Tracking</a></li>
+                            </ul>
+                        </li>
+                    }
+
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "About" ? "active" : "")" 
+                           asp-controller="Home" asp-action="About">
+                            <i class="bi bi-info-circle me-1"></i> Bag Specs &amp; About
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center gap-2">
+                    <a asp-controller="Home" asp-action="Tracking" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-geo-alt me-1"></i> Track Order
+                    </a>
+                    <a asp-controller="Orders" asp-action="Create" class="btn btn-primary btn-sm fw-bold">
+                        <i class="bi bi-plus-circle me-1"></i> Place Order (No Login)
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main role="main" class="main-content py-4">
+        <div class="container">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 d-flex align-items-center mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill fs-5 me-2 text-success"></i>
+                    <div>@TempData["SuccessMessage"]</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 d-flex align-items-center mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill fs-5 me-2 text-danger"></i>
+                    <div>@TempData["ErrorMessage"]</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @RenderBody()
+        </div>
+    </main>
+
+    <!-- Professional Footer -->
+    <footer class="ge-footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div style="width: 32px; height: 32px; background: rgba(255,255,255,0.1); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                            <i class="bi bi-bag-fill text-warning fs-5"></i>
+                        </div>
+                        <h5 class="mb-0 text-white fw-bold">@enterprise.CompanyName</h5>
+                    </div>
+                    <p class="text-light-50 mb-3">
+                        @enterprise.Tagline
+                    </p>
+                    <p class="text-secondary small mb-0">
+                        Reliable bulk supplier of high quality plastic bags engineered for retail, commercial packaging, grocery, and general industrial usage.
+                    </p>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <h5>Plastic Bag Size Standards</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <span class="badge-bag-small me-2"><i class="bi bi-check-circle"></i> Small</span>
+                            <span>Pharmacies, stationery, takeaway pouches (8x10, 10x12)</span>
+                        </li>
+                        <li class="mb-2">
+                            <span class="badge-bag-medium me-2"><i class="bi bi-check-circle"></i> Medium</span>
+                            <span>Supermarkets, retail garments, D-cut carry bags (12x15, 14x16)</span>
+                        </li>
+                        <li class="mb-2">
+                            <span class="badge-bag-large me-2"><i class="bi bi-check-circle"></i> Large</span>
+                            <span>Wholesale textiles, heavy duty packaging &amp; liners (18x24, 24x30)</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-4 col-md-12">
+                    <h5>Enterprise Business Details</h5>
+                    <div class="p-3 rounded" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <p class="mb-2 text-light small">
+                            <i class="bi bi-person-badge-fill text-warning me-2"></i><strong>Contact Person:</strong> 
+                            <span class="text-light ms-1">@enterprise.ContactPerson</span>
+                        </p>
+                        <p class="mb-2 text-light small">
+                            <i class="bi bi-telephone-fill text-warning me-2"></i><strong>Phone:</strong> 
+                            <a href="tel:+919823045678" class="text-light text-decoration-none ms-1">@enterprise.Phone</a>
+                        </p>
+                        <p class="mb-2 text-light small">
+                            <i class="bi bi-envelope-fill text-warning me-2"></i><strong>Email:</strong> 
+                            <a href="mailto:@enterprise.Email" class="text-warning text-decoration-none ms-1">@enterprise.Email</a>
+                        </p>
+                        <p class="mb-2 text-light small">
+                            <i class="bi bi-geo-alt-fill text-warning me-2"></i><strong>Address:</strong> 
+                            <span class="text-light ms-1">@enterprise.Address, @enterprise.CityStateZip</span>
+                        </p>
+                        <p class="mb-2 text-light small">
+                            <i class="bi bi-card-text text-warning me-2"></i><strong>GSTIN:</strong> 
+                            <span class="badge bg-warning text-dark font-monospace ms-1">@enterprise.GstNumber</span>
+                        </p>
+                        <p class="mb-0 text-light small">
+                            <i class="bi bi-clock-fill text-warning me-2"></i><strong>Hours:</strong> 
+                            <span class="text-light ms-1">@enterprise.WorkingHours</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ge-footer-bottom d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    &copy; @DateTime.Now.Year <strong>@enterprise.CompanyName</strong>. All rights reserved. Plastic Bags in Small, Medium &amp; Large sizes.
+                </div>
+                <div class="d-flex gap-3">
+                    <a asp-controller="Home" asp-action="Index">Customer Store</a>
+                    <a asp-controller="Account" asp-action="RetailerLogin">Retailer Portal</a>
+                    <a asp-controller="Account" asp-action="AdminLogin">Admin Login</a>
+                    <a asp-controller="Home" asp-action="Tracking">Track Order</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

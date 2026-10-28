@@ -1,0 +1,88 @@
+@model GaneshEnterprises.Models.Order
+@{
+    ViewData["Title"] = "Place Bulk Retailer Order";
+}
+
+<div class="row justify-content-center py-3">
+    <div class="col-lg-8">
+        <div class="mb-4">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-2">
+                <i class="bi bi-arrow-left me-1"></i> Back to Retailer Dashboard
+            </a>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-cart-plus text-primary me-2"></i>Place Bulk Wholesale Order</h2>
+            <p class="text-muted small">Orders are processed directly at Ganesh Enterprises' wholesale rates with guaranteed delivery.</p>
+        </div>
+
+        <div class="ge-card shadow-sm">
+            <div class="ge-card-header bg-light">
+                <h5 class="mb-0 fw-bold text-dark">Wholesale Order Requisition</h5>
+            </div>
+            <div class="ge-card-body p-4">
+                <form asp-action="PlaceOrder" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <!-- Customer / Business Name (pre-filled) -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-7">
+                            <label asp-for="CustomerName" class="form-label fw-bold">Retailer Business Name</label>
+                            <input asp-for="CustomerName" class="form-control" readonly />
+                            <span asp-validation-for="CustomerName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="ContactNumber" class="form-label fw-bold">Contact Phone Number</label>
+                            <input asp-for="ContactNumber" class="form-control" />
+                            <span asp-validation-for="ContactNumber" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Product Dropdown -->
+                    <div class="mb-3">
+                        <label asp-for="ProductId" class="form-label fw-bold">Select Plastic Bag Product (Small / Medium / Large)</label>
+                        <select asp-for="ProductId" class="form-select" asp-items="ViewBag.Products">
+                            <option value="">-- Choose Plastic Bag Product --</option>
+                        </select>
+                        <span asp-validation-for="ProductId" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Quantity & Date -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="Quantity" class="form-label fw-bold">Quantity (Pieces)</label>
+                            <div class="input-group">
+                                <input asp-for="Quantity" class="form-control" type="number" min="500" step="500" placeholder="2000" />
+                                <span class="input-group-text bg-light">Pieces</span>
+                            </div>
+                            <span asp-validation-for="Quantity" class="text-danger small"></span>
+                            <small class="text-muted d-block mt-1">Minimum wholesale batch: 500 pcs</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="OrderDate" class="form-label fw-bold">Requisition Date</label>
+                            <input asp-for="OrderDate" class="form-control" type="date" />
+                            <span asp-validation-for="OrderDate" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 border mb-4">
+                        <div class="d-flex align-items-center gap-2 text-success fw-bold mb-1">
+                            <i class="bi bi-shield-check fs-5"></i> Automatic Consignment Tracking
+                        </div>
+                        <p class="small text-muted mb-0">
+                            A unique tracking number will be automatically allocated upon placement, allowing real-time tracking of dispatch and delivery milestones.
+                        </p>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-warning fw-bold px-4 py-2 shadow-sm">
+                            <i class="bi bi-check2-circle me-1"></i> Confirm Wholesale Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

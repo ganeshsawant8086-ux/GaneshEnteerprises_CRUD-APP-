@@ -1,0 +1,73 @@
+@model GaneshEnterprises.Models.AdminLoginViewModel
+@{
+    ViewData["Title"] = "Admin Security Portal - Ganesh Enterprises";
+    Layout = "_Layout";
+}
+
+<div class="row justify-content-center py-4">
+    <div class="col-md-5">
+        <div class="text-center mb-4">
+            <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #1e3a8a, #0f172a); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(30, 58, 138, 0.3);">
+                <i class="bi bi-shield-lock-fill text-warning fs-2"></i>
+            </div>
+            <h2 class="fw-bold text-dark mt-3 mb-1">Admin Control Portal</h2>
+            <p class="text-muted small">Strict authenticated access for Ganesh Enterprises management only.</p>
+        </div>
+
+        <div class="ge-card shadow-lg border-0">
+            <div class="ge-card-header bg-dark text-white text-center py-3">
+                <span class="fw-bold text-uppercase tracking-wider small">
+                    <i class="bi bi-key-fill text-warning me-1"></i> Authorized Credentials Verification
+                </span>
+            </div>
+            <div class="ge-card-body p-4">
+                <form asp-action="AdminLogin" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+
+                    <!-- Admin ID (Email) -->
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label fw-bold">Admin User ID (Email)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person-fill text-primary"></i></span>
+                            <input asp-for="Email" class="form-control" placeholder="ganeshenterprises@gmail.com" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                        <small class="text-muted d-block mt-1">Admin ID: <code>ganeshenterprises@gmail.com</code></small>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label fw-bold">Security Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-lock-fill text-primary"></i></span>
+                            <input asp-for="Password" class="form-control" type="password" placeholder="Admin@123" />
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                        <small class="text-muted d-block mt-1">Admin Password: <code>Admin@123</code></small>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" asp-for="RememberMe" id="adminRemember" checked>
+                        <label class="form-check-label text-muted small" for="adminRemember">
+                            Maintain secure session on this device
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm" style="background: linear-gradient(135deg, #1e3a8a, #0d9488); border: none;">
+                        <i class="bi bi-unlock-fill me-1"></i> Verify &amp; Access Admin Portal
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a asp-controller="Home" asp-action="Index" class="text-secondary small text-decoration-none">
+                <i class="bi bi-arrow-left me-1"></i> Return to Homepage
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

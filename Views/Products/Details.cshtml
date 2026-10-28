@@ -1,0 +1,185 @@
+@model GaneshEnterprises.Models.Product
+
+@{
+    ViewData["Title"] = "Plastic Bag Details - " + Model.Name;
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-3">
+        <i class="bi bi-arrow-left me-1"></i> Back to Product Catalog
+    </a>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">@Model.Name</h2>
+            <div class="d-flex align-items-center gap-2">
+                @if (Model.BagSize == GaneshEnterprises.Models.BagSize.Small)
+                {
+                    <span class="badge-bag-small fs-6"><i class="bi bi-tag-fill me-1"></i> Small Size Bag</span>
+                }
+                else if (Model.BagSize == GaneshEnterprises.Models.BagSize.Medium)
+                {
+                    <span class="badge-bag-medium fs-6"><i class="bi bi-tag-fill me-1"></i> Medium Size Bag</span>
+                }
+                else
+                {
+                    <span class="badge-bag-large fs-6"><i class="bi bi-tag-fill me-1"></i> Large Size Bag</span>
+                }
+
+                @if (Model.IsAvailable)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-check-circle me-1"></i> Available for Ordering</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle"><i class="bi bi-x-circle me-1"></i> Ordering Suspended</span>
+                }
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="Orders" asp-action="Create" asp-route-productId="@Model.Id" class="btn btn-success fw-semibold">
+                <i class="bi bi-cart-plus me-1"></i> Order This Bag
+            </a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary fw-semibold">
+                <i class="bi bi-pencil-square me-1"></i> Edit
+            </a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger fw-semibold">
+                <i class="bi bi-trash3 me-1"></i> Delete
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <!-- Technical Specifications Card -->
+        <div class="ge-card mb-4">
+            <div class="ge-card-header">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-info-circle text-primary me-2"></i>Product Details &amp; Specifications</h5>
+            </div>
+            <div class="ge-card-body">
+                <div class="mb-4">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Description &amp; Use-Cases</label>
+                    <p class="fs-6 text-dark mb-0">@Model.Description</p>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <label class="text-muted small fw-bold text-uppercase d-block mb-1">Bag Classification</label>
+                            <span class="fs-5 fw-bold text-dark">@Model.BagSize Plastic Bag</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <label class="text-muted small fw-bold text-uppercase d-block mb-1">Wholesale Unit Price</label>
+                            <span class="fs-5 fw-bold text-primary">₹@Model.Price.ToString("F2")</span> <small class="text-muted">/ piece</small>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <label class="text-muted small fw-bold text-uppercase d-block mb-1">Current Warehouse Stock</label>
+                            <span class="fs-5 fw-bold text-dark">@Model.StockQuantity.ToString("N0") Units</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <label class="text-muted small fw-bold text-uppercase d-block mb-1">Ordering Availability</label>
+                            <span class="fs-5 fw-bold @(Model.IsAvailable ? "text-success" : "text-danger")">
+                                @(Model.IsAvailable ? "Active for Supply" : "Not Currently Available")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Associated Orders History -->
+        <div class="ge-card">
+            <div class="ge-card-header">
+                <div>
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-receipt text-primary me-2"></i>Customer Orders for this Bag</h5>
+                    <small class="text-muted">Orders referencing this product</small>
+                </div>
+                <span class="badge bg-primary">@Model.Orders.Count Order(s)</span>
+            </div>
+            <div class="table-responsive">
+                <table class="ge-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer Name</th>
+                            <th>Contact</th>
+                            <th>Quantity</th>
+                            <th>Order Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Orders != null && Model.Orders.Any())
+                        {
+                            @foreach (var order in Model.Orders.OrderByDescending(o => o.OrderDate))
+                            {
+                                <tr>
+                                    <td><a asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id" class="fw-bold text-primary">#@order.Id</a></td>
+                                    <td class="fw-semibold">@order.CustomerName</td>
+                                    <td>@order.ContactNumber</td>
+                                    <td class="fw-bold">@order.Quantity.ToString("N0")</td>
+                                    <td>@order.OrderDate.ToString("dd-MMM-yyyy")</td>
+                                    <td>
+                                        <span class="badge @(order.Status == "Completed" ? "bg-success" : order.Status == "Processing" ? "bg-primary" : "bg-warning text-dark")">
+                                            @order.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    No customer orders placed for this bag yet.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Reference Card -->
+    <div class="col-lg-4">
+        <div class="ge-card p-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-rulers text-accent me-2"></i>Bag Size Guide Reference</h5>
+            @if (Model.BagSize == GaneshEnterprises.Models.BagSize.Small)
+            {
+                <div class="alert alert-info border-0">
+                    <h6 class="fw-bold text-info"><i class="bi bi-info-circle me-1"></i> Small Bag Standard</h6>
+                    <p class="small mb-0">Designed for compact items like medicines, cosmetics, stationery, dry fruits, and hardware components.</p>
+                </div>
+            }
+            else if (Model.BagSize == GaneshEnterprises.Models.BagSize.Medium)
+            {
+                <div class="alert alert-warning border-0">
+                    <h6 class="fw-bold text-warning-emphasis"><i class="bi bi-info-circle me-1"></i> Medium Bag Standard</h6>
+                    <p class="small mb-0">Most popular retail choice for grocery stores, garment retail, apparel boutiques, and departmental goods.</p>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-secondary border-0" style="background-color: #f3e8ff; color: #7e22ce;">
+                    <h6 class="fw-bold"><i class="bi bi-info-circle me-1"></i> Large Bag Standard</h6>
+                    <p class="small mb-0">Heavy payload bag engineered for textile parcels, bedsheets, blankets, bulk dispatch, and industrial storage.</p>
+                </div>
+            }
+
+            <div class="mt-4 pt-3 border-top">
+                <h6 class="fw-bold text-dark mb-2">Need to place a bulk batch?</h6>
+                <p class="text-muted small mb-3">Order multiple bundles directly into our production queue.</p>
+                <a asp-controller="Orders" asp-action="Create" asp-route-productId="@Model.Id" class="btn btn-warning w-100 fw-bold">
+                    <i class="bi bi-cart-plus me-1"></i> Create Order for @Model.Name
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

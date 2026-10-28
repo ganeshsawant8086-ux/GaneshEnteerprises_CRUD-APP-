@@ -1,0 +1,94 @@
+@model GaneshEnterprises.Models.Product
+
+@{
+    ViewData["Title"] = "Delete Product Confirmation";
+    var hasOrders = Model.Orders != null && Model.Orders.Any();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="mb-4">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-2">
+                <i class="bi bi-arrow-left me-1"></i> Back to Product Catalog
+            </a>
+            <h2 class="fw-bold text-danger mb-1"><i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Product Confirmation</h2>
+            <p class="text-muted small">Please confirm if you want to permanently remove this plastic bag product from inventory.</p>
+        </div>
+
+        @if (hasOrders)
+        {
+            <div class="alert alert-warning border-0 d-flex align-items-center mb-4" role="alert">
+                <i class="bi bi-exclamation-circle-fill fs-3 me-3 text-warning"></i>
+                <div>
+                    <h6 class="fw-bold mb-1">Cannot Delete While Orders Exist</h6>
+                    <p class="mb-0 small">
+                        This product is currently associated with <strong>@Model.Orders!.Count customer order(s)</strong>.
+                        To protect transaction integrity, please reassign or remove the dependent orders before deleting this product.
+                    </p>
+                </div>
+            </div>
+        }
+
+        <div class="ge-card border-danger-subtle">
+            <div class="ge-card-header bg-danger-subtle text-danger-emphasis">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-trash3 me-2"></i>Review Product Details</h5>
+            </div>
+            <div class="ge-card-body p-4">
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Product Name</label>
+                    <h4 class="fw-bold text-dark">@Model.Name</h4>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Description</label>
+                    <p class="text-secondary mb-0">@Model.Description</p>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-4">
+                        <label class="text-muted small fw-bold text-uppercase d-block mb-1">Bag Size</label>
+                        @if (Model.BagSize == GaneshEnterprises.Models.BagSize.Small)
+                        {
+                            <span class="badge-bag-small">Small</span>
+                        }
+                        else if (Model.BagSize == GaneshEnterprises.Models.BagSize.Medium)
+                        {
+                            <span class="badge-bag-medium">Medium</span>
+                        }
+                        else
+                        {
+                            <span class="badge-bag-large">Large</span>
+                        }
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="text-muted small fw-bold text-uppercase d-block mb-1">Unit Price</label>
+                        <span class="fw-bold text-dark fs-5">₹@Model.Price.ToString("F2")</span>
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="text-muted small fw-bold text-uppercase d-block mb-1">Warehouse Stock</label>
+                        <span class="fw-bold text-dark fs-5">@Model.StockQuantity.ToString("N0")</span>
+                    </div>
+                </div>
+
+                <form asp-action="Delete" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        @if (!hasOrders)
+                        {
+                            <button type="submit" class="btn btn-danger px-4 fw-bold">
+                                <i class="bi bi-trash3-fill me-1"></i> Confirm &amp; Delete Product
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-danger px-4 fw-bold" disabled title="Cannot delete product with active orders">
+                                <i class="bi bi-slash-circle me-1"></i> Deletion Blocked (Active Orders)
+                            </button>
+                        }
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

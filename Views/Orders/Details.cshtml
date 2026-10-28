@@ -1,0 +1,173 @@
+@model GaneshEnterprises.Models.Order
+
+@{
+    ViewData["Title"] = "Order Details #" + Model.Id;
+    var totalAmount = Model.Product != null ? Model.Product.Price * Model.Quantity : 0;
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Back to Orders List
+            </a>
+            <div class="d-flex gap-2">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary btn-sm fw-semibold">
+                    <i class="bi bi-pencil-square me-1"></i> Edit Order
+                </a>
+                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger btn-sm fw-semibold">
+                    <i class="bi bi-trash3 me-1"></i> Delete Order
+                </a>
+            </div>
+        </div>
+
+        <!-- Receipt / Order Slip Card -->
+        <div class="ge-card mb-4">
+            <div class="ge-card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-receipt text-primary me-2"></i>Order Slip #@Model.Id</h5>
+                    <small class="text-muted">Recorded on @Model.OrderDate.ToString("dddd, dd MMMM yyyy")</small>
+                </div>
+                <div>
+                    @if (Model.Status == "Pending")
+                    {
+                        <span class="badge-status-pending fs-6">Pending Approval</span>
+                    }
+                    else if (Model.Status == "Processing")
+                    {
+                        <span class="badge-status-processing fs-6">In Production / Processing</span>
+                    }
+                    else if (Model.Status == "Completed")
+                    {
+                        <span class="badge-status-completed fs-6">Order Completed</span>
+                    }
+                    else
+                    {
+                        <span class="badge-status-cancelled fs-6">@Model.Status</span>
+                    }
+                </div>
+            </div>
+
+            <div class="ge-card-body p-4">
+                <!-- Customer Details -->
+                <div class="row g-3 mb-4 p-3 bg-light rounded-3 border">
+                    <div class="col-sm-6">
+                        <label class="text-muted small fw-bold text-uppercase d-block mb-1">Customer / Business Name</label>
+                        <h5 class="fw-bold text-dark mb-0">@Model.CustomerName</h5>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="text-muted small fw-bold text-uppercase d-block mb-1">Contact Phone Number</label>
+                        <div class="fs-6 fw-semibold text-primary">
+                            <i class="bi bi-telephone me-1"></i>@Model.ContactNumber
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Specifications -->
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-bag-check text-accent me-2"></i>Ordered Products / Bag Items</h6>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item Description</th>
+                                <th class="text-center">Bag Size</th>
+                                <th class="text-end">Unit Price</th>
+                                <th class="text-center">Quantity</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.OrderItems != null && Model.OrderItems.Any())
+                            {
+                                foreach (var item in Model.OrderItems)
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong class="text-dark">@item.ProductName</strong>
+                                        </td>
+                                        <td class="text-center">
+                                            @if (item.BagSize == "Small")
+                                            {
+                                                <span class="badge-bag-small">Small</span>
+                                            }
+                                            else if (item.BagSize == "Large")
+                                            {
+                                                <span class="badge-bag-large">Large</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge-bag-medium">@item.BagSize</span>
+                                            }
+                                        </td>
+                                        <td class="text-end fw-semibold">₹@item.UnitPrice.ToString("F2")</td>
+                                        <td class="text-center fw-bold">@item.Quantity.ToString("N0") pcs</td>
+                                        <td class="text-end fw-bold text-success fs-6">₹@item.TotalPrice.ToString("N2")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td>
+                                        @if (Model.Product != null)
+                                        {
+                                            <strong>@Model.Product.Name</strong>
+                                            <p class="small text-muted mb-0">@Model.Product.Description</p>
+                                        }
+                                        else
+                                        {
+                                            <span>Product ID: @Model.ProductId</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (Model.Product != null)
+                                        {
+                                            @if (Model.Product.BagSize == GaneshEnterprises.Models.BagSize.Small)
+                                            {
+                                                <span class="badge-bag-small">Small</span>
+                                            }
+                                            else if (Model.Product.BagSize == GaneshEnterprises.Models.BagSize.Medium)
+                                            {
+                                                <span class="badge-bag-medium">Medium</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge-bag-large">Large</span>
+                                            }
+                                        }
+                                    </td>
+                                    <td class="text-end fw-semibold">
+                                        ₹@((Model.Product?.Price ?? 0).ToString("F2"))
+                                    </td>
+                                    <td class="text-center fw-bold">
+                                        @Model.Quantity.ToString("N0") pcs
+                                    </td>
+                                    <td class="text-end fw-bold text-success fs-6">
+                                        ₹@((Model.TotalAmount > 0 ? Model.TotalAmount : totalAmount).ToString("N2"))
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-light">
+                                <td colspan="4" class="text-end fw-bold fs-6">Total Order Value:</td>
+                                <td class="text-end fw-bold text-success fs-5">₹@((Model.TotalAmount > 0 ? Model.TotalAmount : totalAmount).ToString("N2"))</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small d-block">Enterprise Supplier:</span>
+                        <strong class="text-dark">Ganesh Enterprises</strong>
+                    </div>
+                    <div class="text-end">
+                        <span class="text-muted small d-block">Status:</span>
+                        <strong class="text-dark">@Model.Status</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

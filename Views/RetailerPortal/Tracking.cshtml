@@ -1,0 +1,105 @@
+@model IEnumerable<GaneshEnterprises.Models.OrderTracking>
+@{
+    ViewData["Title"] = "Retailer Consignment Tracking";
+    var searchCode = ViewBag.SearchCode as string;
+}
+
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-2">&larr; Back to Dashboard</a>
+        <h2 class="fw-bold text-dark mb-1"><i class="bi bi-truck text-primary me-2"></i>Consignment Tracking</h2>
+        <p class="text-muted small mb-0">Monitor factory dispatch, transit hubs, and delivery updates for your wholesale orders.</p>
+    </div>
+    <a asp-action="PlaceOrder" class="btn btn-warning fw-bold">
+        <i class="bi bi-cart-plus me-1"></i> Place New Order
+    </a>
+</div>
+
+<!-- Tracking Search Filter Bar -->
+<div class="ge-card mb-4 p-3">
+    <form asp-action="Tracking" method="get" class="row g-2 align-items-center">
+        <div class="col-md-9">
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="code" value="@searchCode" class="form-control" 
+                       placeholder="Enter Tracking # (e.g. TRK-GE-84521) or Order ID..." />
+            </div>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary fw-bold w-100">
+                <i class="bi bi-geo-alt me-1"></i> Track Shipment
+            </button>
+            @if (!string.IsNullOrEmpty(searchCode))
+            {
+                <a asp-action="Tracking" class="btn btn-outline-secondary">Reset</a>
+            }
+        </div>
+    </form>
+</div>
+
+<!-- Tracking Milestone List -->
+<div class="row g-4">
+    @if (Model.Any())
+    {
+        @foreach (var track in Model)
+        {
+            <div class="col-lg-6">
+                <div class="ge-card h-100 border-start border-4 border-primary">
+                    <div class="ge-card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-dark">Order #@(track.OrderId)</span>
+                            <strong class="ms-2 text-dark">@(track.Order?.OrderNumber ?? "GE-ORD")</strong>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                            <code>@track.TrackingNumber</code>
+                        </span>
+                    </div>
+                    <div class="ge-card-body p-4">
+                        <div class="d-flex align-items-start gap-3 mb-3">
+                            <div class="p-2 rounded-circle bg-success text-white">
+                                <i class="bi bi-check2-circle fs-4"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1">@track.CurrentStatus</h5>
+                                <div class="text-secondary small">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> Location: <strong>@track.CurrentLocation</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3 p-3 bg-light rounded-3 small">
+                            <div class="col-6">
+                                <span class="text-muted d-block">Logistics Carrier:</span>
+                                <strong>@track.CarrierName</strong>
+                            </div>
+                            <div class="col-6">
+                                <span class="text-muted d-block">Est. Delivery:</span>
+                                <strong>@(track.EstimatedDelivery?.ToString("dd-MMM-yyyy") ?? "In Progress")</strong>
+                            </div>
+                            <div class="col-12 mt-2 pt-2 border-top">
+                                <span class="text-muted d-block">Product &amp; Qty:</span>
+                                <strong>@(track.Order?.Product?.Name ?? "Item") &bull; @(track.Order?.Quantity.ToString("N0") ?? "0") pcs</strong>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(track.Notes))
+                        {
+                            <p class="small text-muted mb-0"><i class="bi bi-info-circle me-1"></i> @track.Notes</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="col-12">
+            <div class="text-center py-5 ge-card">
+                <i class="bi bi-truck fs-1 text-muted d-block mb-2"></i>
+                <h5 class="fw-bold">No Consignments Found</h5>
+                <p class="text-muted small">No tracking records match the provided tracking number or order.</p>
+                <a asp-action="Tracking" class="btn btn-outline-primary btn-sm">View All Consignments</a>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,90 @@
+@model GaneshEnterprises.Models.Order
+
+@{
+    ViewData["Title"] = "Edit Order #" + Model.Id;
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="mb-4">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-2">
+                <i class="bi bi-arrow-left me-1"></i> Back to Orders List
+            </a>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-pencil-square text-primary me-2"></i>Edit Customer Order</h2>
+            <p class="text-muted small">Update order quantities, status, or customer contact details.</p>
+        </div>
+
+        <div class="ge-card">
+            <div class="ge-card-header">
+                <h5 class="mb-0 fw-bold text-dark">Modify Order #@Model.Id</h5>
+                <span class="badge bg-light text-dark border">Order ID: @Model.Id</span>
+            </div>
+            <div class="ge-card-body p-4">
+                <form asp-action="Edit" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <!-- Customer Info -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-7">
+                            <label asp-for="CustomerName" class="form-label"></label>
+                            <input asp-for="CustomerName" class="form-control" />
+                            <span asp-validation-for="CustomerName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="ContactNumber" class="form-label"></label>
+                            <input asp-for="ContactNumber" class="form-control" />
+                            <span asp-validation-for="ContactNumber" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Product Selection Dropdown -->
+                    <div class="mb-3">
+                        <label asp-for="ProductId" class="form-label"></label>
+                        <select asp-for="ProductId" class="form-select" asp-items="ViewBag.ProductId">
+                        </select>
+                        <span asp-validation-for="ProductId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <!-- Quantity -->
+                        <div class="col-md-4">
+                            <label asp-for="Quantity" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="Quantity" class="form-control" type="number" min="1" />
+                                <span class="input-group-text bg-light">Pieces</span>
+                            </div>
+                            <span asp-validation-for="Quantity" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Order Date -->
+                        <div class="col-md-4">
+                            <label asp-for="OrderDate" class="form-label"></label>
+                            <input asp-for="OrderDate" class="form-control" type="date" />
+                            <span asp-validation-for="OrderDate" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Order Status -->
+                        <div class="col-md-4">
+                            <label asp-for="Status" class="form-label"></label>
+                            <select asp-for="Status" class="form-select" asp-items="ViewBag.StatusList">
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-ge-primary px-4">
+                            <i class="bi bi-check2-circle me-1"></i> Update Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

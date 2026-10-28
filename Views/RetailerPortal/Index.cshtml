@@ -1,0 +1,210 @@
+@model GaneshEnterprises.Models.RetailerPortalViewModel
+@{
+    ViewData["Title"] = "Retailer Wholesale & Margins Portal";
+}
+
+<!-- Retailer Store Header -->
+<div class="ge-card mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #0d9488 0%, #1e3a8a 100%); color: #ffffff;">
+    <div class="ge-card-body p-4">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill">
+                        <i class="bi bi-patch-check-fill me-1"></i> Verified Wholesale Dealer
+                    </span>
+                    <span class="badge bg-white bg-opacity-25 text-white">
+                        ID: #@Model.CurrentRetailer.Id
+                    </span>
+                </div>
+                <h2 class="fw-bold text-white mb-1">@Model.CurrentRetailer.BusinessName</h2>
+                <p class="text-light-50 mb-0">
+                    Proprietor: <strong>@Model.CurrentRetailer.OwnerName</strong> &bull; 
+                    <i class="bi bi-geo-alt text-warning ms-2"></i> @Model.CurrentRetailer.City, @Model.CurrentRetailer.State &bull;
+                    <i class="bi bi-telephone text-warning ms-2"></i> @Model.CurrentRetailer.Phone &bull;
+                    GSTIN: <code>@(string.IsNullOrEmpty(Model.CurrentRetailer.GstNumber) ? "Registered" : Model.CurrentRetailer.GstNumber)</code>
+                </p>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                <a asp-action="PlaceOrder" class="btn btn-warning fw-bold px-4 py-2 shadow-sm">
+                    <i class="bi bi-cart-plus-fill me-1"></i> Order Bags at Wholesale Rate
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Margin Highlights Banner -->
+<div class="alert alert-success border-0 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4 p-3" role="alert">
+    <div class="d-flex align-items-center">
+        <div class="fs-3 me-3 text-success"><i class="bi bi-graph-up-arrow"></i></div>
+        <div>
+            <strong class="d-block text-success-emphasis">Retailer Selling Margins Active:</strong>
+            <span class="text-secondary small">You enjoy wholesale distributor pricing on Small, Medium, and Large plastic bags with up to <strong>35% profit margin</strong> per unit.</span>
+        </div>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Tracking" class="btn btn-sm btn-outline-success fw-bold">
+            <i class="bi bi-truck me-1"></i> Track My Consignments
+        </a>
+    </div>
+</div>
+
+<!-- Wholesale Pricing & Margin Catalog Table -->
+<div class="ge-card mb-5">
+    <div class="ge-card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-tags-fill text-accent me-2"></i>Plastic Bags Wholesale Rate &amp; Profit Margin Chart</h5>
+            <small class="text-muted">Calculated retail margins for Ganesh Enterprises plastic bags</small>
+        </div>
+        <span class="badge bg-primary">@Model.Products.Count Bag Specifications</span>
+    </div>
+    <div class="table-responsive">
+        <table class="ge-table table-hover">
+            <thead>
+                <tr>
+                    <th>Plastic Bag Specification</th>
+                    <th>Bag Size</th>
+                    <th class="text-primary">Wholesale Buy Rate</th>
+                    <th class="text-dark">Customer MRP</th>
+                    <th class="text-success fw-bold">Unit Margin</th>
+                    <th class="text-success fw-bold">Margin %</th>
+                    <th class="text-end">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var bag in Model.Products)
+                {
+                    var profitPerBundle = bag.Margin * 1000;
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">@bag.Name</div>
+                            <small class="text-muted text-truncate d-inline-block" style="max-width: 250px;">@bag.Description</small>
+                        </td>
+                        <td>
+                            @if (bag.BagSize == GaneshEnterprises.Models.BagSize.Small)
+                            {
+                                <span class="badge-bag-small">Small</span>
+                            }
+                            else if (bag.BagSize == GaneshEnterprises.Models.BagSize.Medium)
+                            {
+                                <span class="badge-bag-medium">Medium</span>
+                            }
+                            else
+                            {
+                                <span class="badge-bag-large">Large</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="fw-bold text-primary fs-6">₹@bag.RetailerPrice.ToString("F2")</span>
+                            <small class="text-muted d-block">dealer price</small>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-dark fs-6">₹@bag.CustomerPrice.ToString("F2")</span>
+                            <small class="text-muted d-block">market price</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-success fs-6">+ ₹@bag.Margin.ToString("F2")</div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle small">
+                                ₹@profitPerBundle.ToString("N0") / 1k pcs
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success text-white fw-bold px-2 py-1">
+                                @bag.MarginPercentage.ToString("F1")%
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="PlaceOrder" asp-route-productId="@bag.Id" class="btn btn-sm btn-outline-success fw-bold">
+                                <i class="bi bi-cart-plus me-1"></i> Order Now
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Retailer Order Tracking Section -->
+<div class="ge-card mb-4">
+    <div class="ge-card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-box-seam-fill text-primary me-2"></i>My Orders &amp; Consignment Tracking</h5>
+            <small class="text-muted">Real-time status updates managed by Ganesh Enterprises Central Logistics</small>
+        </div>
+        <a asp-action="PlaceOrder" class="btn btn-sm btn-outline-primary fw-semibold">
+            <i class="bi bi-plus-circle me-1"></i> New Wholesale Order
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="ge-table table-hover">
+            <thead>
+                <tr>
+                    <th>Order #</th>
+                    <th>Product Ordered</th>
+                    <th>Quantity</th>
+                    <th>Total Wholesale Value</th>
+                    <th>Order Date</th>
+                    <th>Status</th>
+                    <th>Live Tracking Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.RetailerOrders.Any())
+                {
+                    @foreach (var order in Model.RetailerOrders)
+                    {
+                        var latestTracking = order.TrackingUpdates.OrderByDescending(t => t.UpdatedAt).FirstOrDefault();
+                        <tr>
+                            <td>
+                                <strong class="text-primary">@(order.OrderNumber ?? $"#GE-{order.Id}")</strong>
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark">@(order.Product?.Name ?? "Item #" + order.ProductId)</div>
+                                <small class="text-muted">Size: @(order.Product?.BagSize.ToString() ?? "-")</small>
+                            </td>
+                            <td>
+                                <strong>@order.Quantity.ToString("N0")</strong> <small class="text-muted">pcs</small>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-dark">₹@order.TotalAmount.ToString("N2")</span>
+                            </td>
+                            <td>
+                                <div>@order.OrderDate.ToString("dd-MMM-yyyy")</div>
+                            </td>
+                            <td>
+                                <span class="badge @(order.Status == "Delivered" ? "bg-success" : order.Status == "Shipped" ? "bg-info text-dark" : "bg-warning text-dark")">
+                                    @order.Status
+                                </span>
+                            </td>
+                            <td>
+                                @if (latestTracking != null)
+                                {
+                                    <div class="small fw-bold text-dark">
+                                        <i class="bi bi-geo-alt-fill text-danger me-1"></i> @latestTracking.CurrentStatus
+                                    </div>
+                                    <small class="text-muted d-block">
+                                        Location: @latestTracking.CurrentLocation &bull; Code: <code>@latestTracking.TrackingNumber</code>
+                                    </small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">Tracking milestone pending generation</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-2 d-block mb-1"></i>
+                            No orders placed yet under this retailer account.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

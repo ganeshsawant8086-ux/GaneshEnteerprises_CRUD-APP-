@@ -1,0 +1,110 @@
+@model GaneshEnterprises.Models.Product
+@{
+    ViewData["Title"] = "Admin - Create Product Pricing";
+}
+
+<div class="row justify-content-center py-3">
+    <div class="col-lg-8">
+        <div class="mb-4">
+            <a asp-action="Products" class="btn btn-outline-secondary btn-sm mb-2">&larr; Back to Products Master</a>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-plus-circle text-primary me-2"></i>Create New Product &amp; Set Rates</h2>
+            <p class="text-muted small">Configure customer price, wholesale retailer price, and margin.</p>
+        </div>
+
+        <div class="ge-card shadow-sm">
+            <div class="ge-card-header bg-light">
+                <h5 class="mb-0 fw-bold text-dark">Bag Specification &amp; Pricing Setup</h5>
+            </div>
+            <div class="ge-card-body p-4">
+                <form asp-action="CreateProduct" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-bold"></label>
+                        <input asp-for="Name" class="form-control" placeholder="e.g. Small LDPE Punch Handle Bag" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-bold"></label>
+                        <textarea asp-for="Description" class="form-control" rows="2" placeholder="Specifications, dimensions, gauge thickness..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label asp-for="BagSize" class="form-label fw-bold"></label>
+                            <select asp-for="BagSize" class="form-select" asp-items="ViewBag.BagSizes"></select>
+                            <span asp-validation-for="BagSize" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="CustomerPrice" class="form-label fw-bold text-dark">Customer Price / MRP (₹)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">₹</span>
+                                <input asp-for="CustomerPrice" class="form-control" type="number" step="0.01" min="0.01" id="custPriceInput" placeholder="2.50" oninput="calculateMargin()" />
+                            </div>
+                            <span asp-validation-for="CustomerPrice" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="RetailerPrice" class="form-label fw-bold text-primary">Wholesale Dealer Rate (₹)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">₹</span>
+                                <input asp-for="RetailerPrice" class="form-control" type="number" step="0.01" min="0.01" id="retPriceInput" placeholder="1.80" oninput="calculateMargin()" />
+                            </div>
+                            <span asp-validation-for="RetailerPrice" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Live Margin Calculation Preview -->
+                    <div class="p-3 bg-light rounded-3 border mb-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="text-muted small d-block">Retailer Profit Margin:</span>
+                                <strong class="text-success fs-5" id="marginDisplay">+ ₹0.00 / pc</strong>
+                            </div>
+                            <div class="text-end">
+                                <span class="text-muted small d-block">Margin Percentage:</span>
+                                <span class="badge bg-success fs-6" id="marginPercentDisplay">0.0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="StockQuantity" class="form-label fw-bold"></label>
+                            <input asp-for="StockQuantity" class="form-control" type="number" min="0" placeholder="10000" />
+                            <span asp-validation-for="StockQuantity" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-center pt-3">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" asp-for="IsAvailable" role="switch" id="availSwitch" checked>
+                                <label class="form-check-label fw-bold ms-2" for="availSwitch">Available for Ordering</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a asp-action="Products" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold">
+                            <i class="bi bi-plus-lg me-1"></i> Save Product &amp; Rates
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function calculateMargin() {
+            var cp = parseFloat(document.getElementById('custPriceInput').value) || 0;
+            var rp = parseFloat(document.getElementById('retPriceInput').value) || 0;
+            var margin = cp > rp ? cp - rp : 0;
+            var percent = cp > 0 ? (margin / cp) * 100 : 0;
+            document.getElementById('marginDisplay').innerText = "+ ₹" + margin.toFixed(2) + " / pc";
+            document.getElementById('marginPercentDisplay').innerText = percent.toFixed(1) + "%";
+        }
+    </script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

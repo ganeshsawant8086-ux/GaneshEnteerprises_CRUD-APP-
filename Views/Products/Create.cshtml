@@ -1,0 +1,98 @@
+@model GaneshEnterprises.Models.Product
+
+@{
+    ViewData["Title"] = "Add New Plastic Bag Product";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="mb-4">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-2">
+                <i class="bi bi-arrow-left me-1"></i> Back to Product Catalog
+            </a>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-plus-circle text-primary me-2"></i>Add New Plastic Bag Product</h2>
+            <p class="text-muted small">Register a new bag specification into Ganesh Enterprises' inventory.</p>
+        </div>
+
+        <div class="ge-card">
+            <div class="ge-card-header">
+                <h5 class="mb-0 fw-bold text-dark">Bag Information &amp; Pricing</h5>
+            </div>
+            <div class="ge-card-body p-4">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <!-- Product Name -->
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label"></label>
+                        <input asp-for="Name" class="form-control" placeholder="e.g. Small LDPE Punch-Hole Bag (10x12)" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label"></label>
+                        <textarea asp-for="Description" class="form-control" rows="3" 
+                                  placeholder="Specify material (LDPE/HDPE), gauge thickness, handle type, and recommended retail use cases..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <!-- Bag Size Dropdown -->
+                        <div class="col-md-6">
+                            <label asp-for="BagSize" class="form-label"></label>
+                            <select asp-for="BagSize" class="form-select" asp-items="Html.GetEnumSelectList<GaneshEnterprises.Models.BagSize>()">
+                                <option value="">-- Select Bag Size --</option>
+                            </select>
+                            <span asp-validation-for="BagSize" class="text-danger small"></span>
+                            <small class="text-muted d-block mt-1">Select Small, Medium, or Large size specification.</small>
+                        </div>
+
+                        <!-- Price -->
+                        <div class="col-md-6">
+                            <label asp-for="Price" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">₹</span>
+                                <input asp-for="Price" class="form-control" type="number" step="0.01" min="0.01" placeholder="0.00" />
+                            </div>
+                            <span asp-validation-for="Price" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <!-- Stock Quantity -->
+                        <div class="col-md-6">
+                            <label asp-for="StockQuantity" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="StockQuantity" class="form-control" type="number" min="0" placeholder="e.g. 10000" />
+                                <span class="input-group-text bg-light">Pieces</span>
+                            </div>
+                            <span asp-validation-for="StockQuantity" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Availability Checkbox -->
+                        <div class="col-md-6 d-flex align-items-center pt-3">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" asp-for="IsAvailable" role="switch" id="isAvailableSwitch" checked>
+                                <label class="form-check-label fw-bold text-dark ms-2" for="isAvailableSwitch">
+                                    Available for Customer Ordering
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-ge-primary px-4">
+                            <i class="bi bi-save me-1"></i> Save Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

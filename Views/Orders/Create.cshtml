@@ -1,0 +1,386 @@
+@model GaneshEnterprises.Models.Order
+
+@{
+    ViewData["Title"] = "Create Customer Order";
+    var productsList = ViewBag.ProductsList as IEnumerable<GaneshEnterprises.Models.Product>;
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="mb-4">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-2">
+                <i class="bi bi-arrow-left me-1"></i> Back to Orders List
+            </a>
+            <h2 class="fw-bold text-dark mb-1"><i class="bi bi-cart-plus text-primary me-2"></i>Create New Customer Order</h2>
+            <p class="text-muted small">Record an order for plastic bags in Small, Medium, or Large sizes. Add multiple bag products to a single order using the cart.</p>
+        </div>
+
+        <div class="ge-card shadow-sm border-0">
+            <div class="ge-card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-receipt me-2 text-primary"></i>Order Entry Form</h5>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill">
+                    <i class="bi bi-building me-1"></i> Ganesh Enterprises
+                </span>
+            </div>
+            <div class="ge-card-body p-4">
+                <form asp-action="Create" method="post" id="orderCreateForm">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <!-- Hidden JSON field for submitted cart items -->
+                    <input type="hidden" name="cartItemsJson" id="cartItemsJson" value="" />
+
+                    <!-- Customer Information -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-7">
+                            <label asp-for="CustomerName" class="form-label fw-semibold"></label>
+                            <input asp-for="CustomerName" id="CustomerName" class="form-control" placeholder="e.g. Metro Retailers / Rajesh Kumar" />
+                            <span asp-validation-for="CustomerName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="ContactNumber" class="form-label fw-semibold"></label>
+                            <input asp-for="ContactNumber" id="ContactNumber" class="form-control" placeholder="e.g. 9876543210" />
+                            <span asp-validation-for="ContactNumber" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- UPPER SIDE: Order Cart List (Shows added products here) -->
+                    <div id="orderCartSection" class="mb-4 p-3 rounded-3 border bg-light shadow-sm" style="border-left: 5px solid #0d6efd !important;">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-cart3 text-white fs-6"></i>
+                                </span>
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-0">Order Cart: Selected Products</h6>
+                                    <small class="text-muted">Products currently added to this customer order (<span id="cartCountBadge" class="fw-bold text-primary">0 items</span>)</small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span class="text-muted small d-block">Grand Total:</span>
+                                <span class="fs-5 fw-bold text-success" id="cartGrandTotal">₹0.00</span>
+                            </div>
+                        </div>
+
+                        <!-- Notification Alert -->
+                        <div id="cartAlert"></div>
+
+                        <!-- Empty State Notice -->
+                        <div id="cartEmptyState" class="text-center py-4 bg-white rounded-3 border border-dashed my-2">
+                            <div class="text-muted">
+                                <i class="bi bi-bag-plus fs-1 text-secondary opacity-50 d-block mb-2"></i>
+                                <h6 class="fw-semibold text-secondary mb-1">Your order cart is currently empty</h6>
+                                <p class="small text-muted mb-0">
+                                    Choose a plastic bag product & quantity below, then click 
+                                    <strong class="text-dark bg-warning px-2 py-1 rounded small"><i class="bi bi-cart-plus-fill"></i> Add to Cart</strong>.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Cart Table (Visible when items >= 1) -->
+                        <div id="cartTableWrapper" style="display: none;" class="table-responsive bg-white rounded-3 border my-2">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 40px;" class="text-center">#</th>
+                                        <th>Plastic Bag Product</th>
+                                        <th class="text-center" style="width: 110px;">Size</th>
+                                        <th class="text-end" style="width: 120px;">Unit Price</th>
+                                        <th class="text-center" style="width: 130px;">Quantity</th>
+                                        <th class="text-end" style="width: 140px;">Subtotal</th>
+                                        <th class="text-center" style="width: 70px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cartTableBody">
+                                    <!-- Populated dynamically via JavaScript -->
+                                </tbody>
+                                <tfoot class="table-light border-top">
+                                    <tr>
+                                        <td colspan="4" class="text-end fw-bold">Total Pieces: <span id="totalPieces" class="text-dark">0</span> pcs</td>
+                                        <td colspan="2" class="text-end fw-bold fs-6 text-success">
+                                            Total Amount: <span id="cartFooterTotal">₹0.00</span>
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Product Selection Dropdown -->
+                    <div class="mb-3">
+                        <label asp-for="ProductId" class="form-label fw-semibold"></label>
+                        <select asp-for="ProductId" id="productSelect" class="form-select">
+                            <option value="">-- Choose Plastic Bag Product (Small / Medium / Large) --</option>
+                            @if (productsList != null)
+                            {
+                                foreach (var prod in productsList)
+                                {
+                                    var price = prod.CustomerPrice > 0 ? prod.CustomerPrice : prod.Price;
+                                    <option value="@prod.Id" 
+                                            data-name="@prod.Name" 
+                                            data-size="@prod.BagSize" 
+                                            data-price="@price"
+                                            data-stock="@prod.StockQuantity"
+                                            selected="@(Model?.ProductId == prod.Id)">
+                                        @prod.Name [@prod.BagSize Bag] - ₹@price.ToString("F2") (Stock: @prod.StockQuantity)
+                                    </option>
+                                }
+                            }
+                            else if (ViewBag.ProductId != null)
+                            {
+                                foreach (var item in (SelectList)ViewBag.ProductId)
+                                {
+                                    <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="ProductId" class="text-danger small"></span>
+
+                        <!-- Helper text (Left) + Red Box Location: Add to Cart Button (Right) -->
+                        <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>Select the bag product with preferred size and thickness.
+                            </small>
+
+                            <!-- User's Red Color Box Location: Cart Button with Cart Logo -->
+                            <div>
+                                <button type="button" id="btnAddToCart" class="btn btn-warning text-dark fw-bold px-3 py-2 shadow-sm d-inline-flex align-items-center gap-2 border-warning" style="border-radius: 8px; transition: transform 0.15s ease;">
+                                    <i class="bi bi-cart-plus-fill fs-5"></i>
+                                    <span>Add to Cart</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quantity, Order Date, Order Status Row -->
+                    <div class="row g-3 mb-4">
+                        <!-- Quantity -->
+                        <div class="col-md-4">
+                            <label asp-for="Quantity" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <input asp-for="Quantity" id="quantityInput" class="form-control" type="number" min="1" placeholder="500" />
+                                <span class="input-group-text bg-light">Pieces</span>
+                            </div>
+                            <span asp-validation-for="Quantity" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Order Date -->
+                        <div class="col-md-4">
+                            <label asp-for="OrderDate" class="form-label fw-semibold"></label>
+                            <input asp-for="OrderDate" class="form-control" type="date" />
+                            <span asp-validation-for="OrderDate" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Order Status -->
+                        <div class="col-md-4">
+                            <label asp-for="Status" class="form-label fw-semibold"></label>
+                            <select asp-for="Status" class="form-select" asp-items="ViewBag.StatusList">
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Form Action Buttons -->
+                    <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4">
+                            <i class="bi bi-x me-1"></i> Cancel
+                        </a>
+                        <button type="submit" id="btnPlaceOrder" class="btn btn-ge-primary px-4 py-2">
+                            <i class="bi bi-cart-check me-1"></i> Place Order
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // State for the cart items
+            let cart = [];
+
+            const productSelect = document.getElementById('productSelect');
+            const quantityInput = document.getElementById('quantityInput');
+            const btnAddToCart = document.getElementById('btnAddToCart');
+            const cartItemsJson = document.getElementById('cartItemsJson');
+            const orderCartSection = document.getElementById('orderCartSection');
+            const cartEmptyState = document.getElementById('cartEmptyState');
+            const cartTableWrapper = document.getElementById('cartTableWrapper');
+            const cartTableBody = document.getElementById('cartTableBody');
+            const cartCountBadge = document.getElementById('cartCountBadge');
+            const cartGrandTotal = document.getElementById('cartGrandTotal');
+            const cartFooterTotal = document.getElementById('cartFooterTotal');
+            const totalPieces = document.getElementById('totalPieces');
+            const cartAlert = document.getElementById('cartAlert');
+            const orderCreateForm = document.getElementById('orderCreateForm');
+
+            // Render Cart function
+            function renderCart() {
+                if (cart.length === 0) {
+                    cartEmptyState.style.display = 'block';
+                    cartTableWrapper.style.display = 'none';
+                    cartCountBadge.textContent = '0 items';
+                    cartGrandTotal.textContent = '₹0.00';
+                    cartFooterTotal.textContent = '₹0.00';
+                    totalPieces.textContent = '0';
+                    cartItemsJson.value = '';
+                    return;
+                }
+
+                cartEmptyState.style.display = 'none';
+                cartTableWrapper.style.display = 'block';
+
+                let grandTotal = 0;
+                let piecesCount = 0;
+                let rowsHtml = '';
+
+                cart.forEach((item, index) => {
+                    grandTotal += item.totalPrice;
+                    piecesCount += item.quantity;
+
+                    let sizeBadgeClass = 'badge-bag-medium';
+                    if (item.bagSize === 'Small') sizeBadgeClass = 'badge-bag-small';
+                    else if (item.bagSize === 'Large') sizeBadgeClass = 'badge-bag-large';
+
+                    rowsHtml += `
+                        <tr>
+                            <td class="text-center fw-bold text-muted">${index + 1}</td>
+                            <td>
+                                <strong class="text-dark">${item.productName}</strong>
+                            </td>
+                            <td class="text-center">
+                                <span class="${sizeBadgeClass}">${item.bagSize}</span>
+                            </td>
+                            <td class="text-end fw-semibold">₹${item.unitPrice.toFixed(2)}</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary-subtle text-dark border px-2 py-1 fs-7">
+                                    ${item.quantity.toLocaleString()} pcs
+                                </span>
+                            </td>
+                            <td class="text-end fw-bold text-success">₹${item.totalPrice.toFixed(2)}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-item" data-index="${index}" title="Remove item">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                cartTableBody.innerHTML = rowsHtml;
+                cartCountBadge.textContent = `${cart.length} item${cart.length > 1 ? 's' : ''}`;
+                cartGrandTotal.textContent = `₹${grandTotal.toFixed(2)}`;
+                cartFooterTotal.textContent = `₹${grandTotal.toFixed(2)}`;
+                totalPieces.textContent = piecesCount.toLocaleString();
+
+                // Save to hidden input
+                cartItemsJson.value = JSON.stringify(cart);
+
+                // Attach delete button listeners
+                document.querySelectorAll('.btn-remove-item').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const idx = parseInt(this.getAttribute('data-index'));
+                        const removed = cart.splice(idx, 1)[0];
+                        renderCart();
+                        showAlert(`Removed "${removed.productName}" from order cart.`, 'warning');
+                    });
+                });
+            }
+
+            // Notification message helper
+            function showAlert(message, type = 'success') {
+                const icon = type === 'success' ? 'check-circle-fill' : 'exclamation-circle-fill';
+                cartAlert.innerHTML = `
+                    <div class="alert alert-${type} alert-dismissible fade show py-2 px-3 small my-2 d-flex align-items-center" role="alert">
+                        <i class="bi bi-${icon} me-2"></i>
+                        <div>${message}</div>
+                        <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+            }
+
+            // Add to Cart button click handler
+            btnAddToCart.addEventListener('click', function () {
+                const selectedOption = productSelect.options[productSelect.selectedIndex];
+                if (!selectedOption || !selectedOption.value) {
+                    showAlert('Please select a plastic bag product from the dropdown first.', 'danger');
+                    productSelect.focus();
+                    return;
+                }
+
+                const qty = parseInt(quantityInput.value);
+                if (isNaN(qty) || qty <= 0) {
+                    showAlert('Please enter a valid quantity of at least 1 piece.', 'danger');
+                    quantityInput.focus();
+                    return;
+                }
+
+                const productId = parseInt(selectedOption.value);
+                const productName = selectedOption.getAttribute('data-name') || selectedOption.text.split('[')[0].trim();
+                const bagSize = selectedOption.getAttribute('data-size') || 'Medium';
+                const unitPrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+
+                // Check if already in cart
+                const existingIndex = cart.findIndex(i => i.productId === productId);
+                if (existingIndex > -1) {
+                    cart[existingIndex].quantity += qty;
+                    cart[existingIndex].totalPrice = cart[existingIndex].quantity * cart[existingIndex].unitPrice;
+                    showAlert(`Updated quantity for "${productName}" (+${qty} pcs).`, 'success');
+                } else {
+                    cart.push({
+                        productId: productId,
+                        productName: productName,
+                        bagSize: bagSize,
+                        quantity: qty,
+                        unitPrice: unitPrice,
+                        totalPrice: unitPrice * qty
+                    });
+                    showAlert(`✓ Added "${productName}" (${qty} pcs) to order cart on upper side!`, 'success');
+                }
+
+                renderCart();
+
+                // Highlight upper side cart section smoothly
+                orderCartSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+
+            // Form Submit Interceptor
+            orderCreateForm.addEventListener('submit', function (e) {
+                // If cart is empty, check if user currently has a product selected in dropdown
+                if (cart.length === 0) {
+                    const selectedOption = productSelect.options[productSelect.selectedIndex];
+                    const qty = parseInt(quantityInput.value);
+
+                    if (selectedOption && selectedOption.value && !isNaN(qty) && qty > 0) {
+                        // Automatically add the selected product into the cart
+                        const productId = parseInt(selectedOption.value);
+                        const productName = selectedOption.getAttribute('data-name') || selectedOption.text.split('[')[0].trim();
+                        const bagSize = selectedOption.getAttribute('data-size') || 'Medium';
+                        const unitPrice = parseFloat(selectedOption.getAttribute('data-price')) || 0;
+
+                        cart.push({
+                            productId: productId,
+                            productName: productName,
+                            bagSize: bagSize,
+                            quantity: qty,
+                            unitPrice: unitPrice,
+                            totalPrice: unitPrice * qty
+                        });
+                        cartItemsJson.value = JSON.stringify(cart);
+                    } else {
+                        e.preventDefault();
+                        showAlert('Please select a product and click "Add to Cart" before placing your order.', 'danger');
+                        productSelect.focus();
+                        return false;
+                    }
+                } else {
+                    cartItemsJson.value = JSON.stringify(cart);
+                }
+            });
+        });
+    </script>
+}

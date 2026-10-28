@@ -1,0 +1,164 @@
+@using Microsoft.Extensions.Options
+@using GaneshEnterprises.Models
+@inject IOptions<EnterpriseInfo> EnterpriseOptions
+@{
+    ViewData["Title"] = "Plastic Bag Specifications & About Ganesh Enterprises";
+    var enterprise = EnterpriseOptions.Value;
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <!-- Main Enterprise Introduction -->
+        <div class="ge-card mb-4">
+            <div class="ge-card-body p-4">
+                <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-2 rounded-pill mb-2">
+                    <i class="bi bi-info-circle me-1"></i> Enterprise Profile
+                </span>
+                <h2 class="fw-bold text-dark mb-3">About Ganesh Enterprises</h2>
+                <p class="lead text-secondary">
+                    <strong>Ganesh Enterprises</strong> is a specialized commercial manufacturer and wholesale supplier of high quality plastic bags.
+                </p>
+                <p class="text-muted">
+                    Our manufacturing lines and wholesale distribution operations focus specifically on supplying 
+                    <strong>Small</strong>, <strong>Medium</strong>, and <strong>Large</strong> plastic bags to commercial establishments, retail merchants, pharmacies, grocery stores, and packaging distributors.
+                </p>
+
+                <div class="alert alert-info border-0 d-flex align-items-center mt-3" role="alert">
+                    <i class="bi bi-shield-check fs-4 me-3 text-info"></i>
+                    <div>
+                        <strong>Standardized Product Focus:</strong> We strictly specialize in 3 standardized bag categories: <strong>Small Bags</strong>, <strong>Medium Bags</strong>, and <strong>Large Bags</strong>, ensuring uniform gauge thickness, high tensile strength, and dependable load capacity.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bag Size Technical Guide -->
+        <div class="ge-card">
+            <div class="ge-card-header">
+                <div>
+                    <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-rulers text-primary me-2"></i>Plastic Bag Size &amp; Application Matrix</h5>
+                    <small class="text-muted">Technical standards for Ganesh Enterprises plastic bag product line</small>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="ge-table">
+                    <thead>
+                        <tr>
+                            <th>Size Category</th>
+                            <th>Standard Dimensions</th>
+                            <th>Primary Use Cases</th>
+                            <th>Available Styles</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <span class="badge-bag-small">Small Bags</span>
+                            </td>
+                            <td>
+                                <strong>8" x 10"</strong><br />
+                                <strong>10" x 12"</strong>
+                            </td>
+                            <td>
+                                Pharmacy medicines, cosmetics, stationery, jewelry boxes, dry spice pouches, mobile accessories.
+                            </td>
+                            <td>
+                                Punch-hole handle, Heat-sealed bottom
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span class="badge-bag-medium">Medium Bags</span>
+                            </td>
+                            <td>
+                                <strong>12" x 15"</strong><br />
+                                <strong>14" x 16"</strong>
+                            </td>
+                            <td>
+                                Supermarkets, garment boutiques, shoe retail, grocery provisions, departmental merchandise.
+                            </td>
+                            <td>
+                                D-Cut handle, Loop handle, Gusseted sides
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <span class="badge-bag-large">Large Bags</span>
+                            </td>
+                            <td>
+                                <strong>18" x 24"</strong><br />
+                                <strong>24" x 30"</strong>
+                            </td>
+                            <td>
+                                Wholesale textile parcels, bulk blankets, departmental shopping, warehouse dispatch &amp; storage liners.
+                            </td>
+                            <td>
+                                Heavy-gauge reinforced film, Extra strong seals
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact & Business Info Card (Editable configuration placeholders) -->
+    <div class="col-lg-4">
+        <div class="ge-card mb-4">
+            <div class="ge-card-header bg-dark text-white">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-building me-2 text-warning"></i>Business Details</h5>
+            </div>
+            <div class="ge-card-body">
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Enterprise Name</label>
+                    <div class="fw-bold text-dark fs-5">@enterprise.CompanyName</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Business Tagline</label>
+                    <div class="text-secondary small">@enterprise.Tagline</div>
+                </div>
+
+                <hr class="my-3 text-muted" />
+
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Contact Person</label>
+                    <div class="fw-semibold text-dark"><i class="bi bi-person-fill text-warning me-1"></i>@enterprise.ContactPerson</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Phone Number</label>
+                    <div class="fw-semibold text-primary"><i class="bi bi-telephone-fill text-warning me-1"></i>@enterprise.Phone</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Email Address</label>
+                    <div class="fw-semibold text-dark"><i class="bi bi-envelope-fill text-warning me-1"></i>@enterprise.Email</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Business Address</label>
+                    <div class="text-secondary"><i class="bi bi-geo-alt-fill text-warning me-1"></i>@enterprise.Address, @enterprise.CityStateZip</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">GSTIN Identification</label>
+                    <span class="badge bg-warning text-dark font-monospace fs-6">@enterprise.GstNumber</span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="text-muted small fw-bold text-uppercase d-block mb-1">Operating Hours</label>
+                    <div class="text-secondary"><i class="bi bi-clock-fill text-warning me-1"></i>@enterprise.WorkingHours</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ge-card bg-primary text-white p-4 text-center">
+            <h5 class="fw-bold mb-2">Ready to place a bulk order?</h5>
+            <p class="text-white-50 small mb-3">Submit your required quantity and bag size directly through our portal.</p>
+            <a asp-controller="Orders" asp-action="Create" class="btn btn-warning fw-bold w-100">
+                <i class="bi bi-cart-plus me-1"></i> Order Plastic Bags
+            </a>
+        </div>
+    </div>
+</div>

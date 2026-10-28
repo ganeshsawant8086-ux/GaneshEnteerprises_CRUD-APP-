@@ -74,13 +74,13 @@ namespace GaneshEnterprises.Controllers
                 .OrderByDescending(o => o.Id)
                 .FirstOrDefaultAsync();
 
-            var customerName = !string.IsNullOrWhiteSpace(pastOrder?.CustomerName)
+            var customerName = !string.IsNullOrWhiteSpace(pastOrder?.CustomerName) && !pastOrder.CustomerName.StartsWith("Customer")
                 ? pastOrder.CustomerName.Trim()
-                : $"Customer ({canonicalPhone})";
+                : string.Empty;
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.Name, customerName),
+                new Claim(ClaimTypes.Name, !string.IsNullOrWhiteSpace(customerName) ? customerName : "Customer"),
                 new Claim(ClaimTypes.MobilePhone, canonicalPhone),
                 new Claim(ClaimTypes.Role, "Customer"),
                 new Claim("PortalType", "Customer")

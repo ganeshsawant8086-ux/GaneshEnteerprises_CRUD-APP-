@@ -195,23 +195,14 @@ namespace GaneshEnterprises.Controllers
                 OrderDate = DateTime.Today,
                 Status = "Pending",
                 Quantity = 500,
-                OrderType = "Customer"
+                OrderType = "Customer",
+                CustomerName = string.Empty, // Strictly empty: do not auto-fill with mobile number
+                ContactNumber = string.Empty // Start empty
             };
 
             if (productId.HasValue)
             {
                 order.ProductId = productId.Value;
-            }
-
-            // Auto-populate customer details if logged in
-            if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Customer"))
-            {
-                order.CustomerName = User.Identity.Name ?? string.Empty;
-                var phone = User.FindFirst(ClaimTypes.MobilePhone)?.Value;
-                if (!string.IsNullOrWhiteSpace(phone))
-                {
-                    order.ContactNumber = phone;
-                }
             }
 
             return View(order);
@@ -222,8 +213,16 @@ namespace GaneshEnterprises.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Order order, string? cartItemsJson)
         {
-            // If logged in as Customer, enforce their logged-in phone number for security
-            if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Customer"))
+            // Validate Customer Name is required and not dummy auto-fill text
+            if (string.IsNullOrWhiteSpace(order.CustomerName) || 
+                order.CustomerName.Trim().StartsWith("Customer(", StringComparison.OrdinalIgnoreCase) ||
+                order.CustomerName.Trim().StartsWith("Customer (", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError("CustomerName", "Customer or Business Name is required. Please enter your name.");
+            }
+
+            // If contact number was left empty but customer is logged in, use their logged-in phone
+            if (string.IsNullOrWhiteSpace(order.ContactNumber) && User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Customer"))
             {
                 var loggedPhone = User.FindFirst(ClaimTypes.MobilePhone)?.Value;
                 if (!string.IsNullOrWhiteSpace(loggedPhone))

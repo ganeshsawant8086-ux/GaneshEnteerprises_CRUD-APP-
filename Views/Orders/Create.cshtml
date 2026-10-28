@@ -47,22 +47,37 @@
                     <!-- Customer Information -->
                     <div class="row g-3 mb-4">
                         <div class="col-md-7">
-                            <label asp-for="CustomerName" class="form-label fw-semibold"></label>
-                            <input asp-for="CustomerName" id="CustomerName" class="form-control" placeholder="e.g. Metro Retailers / Rajesh Kumar" />
+                            <label asp-for="CustomerName" class="form-label fw-bold">
+                                Customer / Business Name <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="CustomerName" id="CustomerName" class="form-control"
+                                   placeholder="Enter customer or business name (e.g. Rajesh Kumar)"
+                                   value=""
+                                   required />
                             <span asp-validation-for="CustomerName" class="text-danger small"></span>
                         </div>
                         <div class="col-md-5">
-                            <label asp-for="ContactNumber" class="form-label fw-semibold"></label>
+                            <label asp-for="ContactNumber" class="form-label fw-bold">
+                                Contact Mobile Number <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="ContactNumber" id="ContactNumber" class="form-control"
+                                   type="tel"
+                                   maxlength="10"
+                                   placeholder="e.g. 9876543210"
+                                   value=""
+                                   required />
+                            <span asp-validation-for="ContactNumber" class="text-danger small"></span>
                             @if (User.IsInRole("Customer"))
                             {
-                                <input asp-for="ContactNumber" id="ContactNumber" class="form-control" readonly style="background-color: #f1f5f9;" />
-                                <small class="text-success small d-block mt-1"><i class="bi bi-shield-check"></i> Linked to your logged-in mobile number</small>
+                                var customerPhone = User.FindFirst(System.Security.Claims.ClaimTypes.MobilePhone)?.Value;
+                                if (!string.IsNullOrEmpty(customerPhone))
+                                {
+                                    <small class="text-muted small d-block mt-1">
+                                        <i class="bi bi-phone me-1"></i> Logged in as +91 @customerPhone
+                                        (<a href="javascript:void(0)" onclick="document.getElementById('ContactNumber').value='@customerPhone'" class="text-primary text-decoration-none fw-semibold">Auto-fill @customerPhone</a>)
+                                    </small>
+                                }
                             }
-                            else
-                            {
-                                <input asp-for="ContactNumber" id="ContactNumber" class="form-control" placeholder="e.g. 9876543210" />
-                            }
-                            <span asp-validation-for="ContactNumber" class="text-danger small"></span>
                         </div>
                     </div>
 

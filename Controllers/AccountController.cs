@@ -21,7 +21,8 @@ namespace GaneshEnterprises.Controllers
         }
 
         // ==========================================
-        // CUSTOMER LOGIN (Mobile Number Only)
+        // 1. CUSTOMER LOGIN (Mobile Number Only)
+        // Role: "Customer"
         // Privacy guaranteed: Customers only see their own orders!
         // ==========================================
         [HttpGet]
@@ -32,6 +33,10 @@ namespace GaneshEnterprises.Controllers
                 if (User.IsInRole("Customer"))
                 {
                     return RedirectToAction("MyOrders", "Orders");
+                }
+                if (User.IsInRole("Retailer"))
+                {
+                    return RedirectToAction("Index", "RetailerPortal");
                 }
                 if (User.IsInRole("Admin"))
                 {
@@ -104,7 +109,141 @@ namespace GaneshEnterprises.Controllers
         }
 
         // ==========================================
-        // ADMIN LOGIN (Strict ID & Password)
+        // 2. RETAILER LOGIN (Email/Phone & Password or OTP)
+        // Role: "Retailer"
+        // Default Password: Password@123 | OTP: 123456
+        // ==========================================
+        [HttpGet]
+        public async Task<IActionResult> RetailerLogin()
+        {
+            if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Retailer"))
+            {
+                return RedirectToAction("Index", "RetailerPortal");
+            }
+
+            var firstRetailer = await _context.Retailers.FirstOrDefaultAsync();
+
+            var model = new RetailerLoginViewModel
+            {
+                EmailOrPhone = firstRetailer != null ? firstRetailer.Email : "om.retail@gmail.com",
+                Password = "Password@123",
+                LoginMode = "password"
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RetailerLogin(RetailerLoginViewModel model)
+        {
+            if (string.IsNullOrWhiteSpace(model.EmailOrPhone))
+            {
+                ModelState.AddModelError("EmailOrPhone", "Please enter your registered email or phone.");
+                return View(model);
+            }
+
+            var identifier = model.EmailOrPhone.Trim().ToLower();
+
+            // Search retailer in database
+            var retailer = await _context.Retailers
+                .FirstOrDefaultAsync(r => r.Email.ToLower() == identifier || r.Phone == identifier);
+
+            if (retailer == null)
+            {
+                ModelState.AddModelError(string.Empty, "No retailer account found with the provided Email or Mobile number.");
+                return View(model);
+            }
+
+            if (!retailer.IsActive)
+            {
+                ModelState.AddModelError(string.Empty, "Your retailer account is currently deactivated. Please contact Ganesh Enterprises.");
+                return View(model);
+            }
+
+            // Check Login Mode: Password vs OTP
+            if (model.LoginMode == "otp")
+            {
+                var validOtp = "123456";
+                if (string.IsNullOrWhiteSpace(model.OtpCode) || model.OtpCode.Trim() != validOtp)
+                {
+                    ModelState.AddModelError("OtpCode", "Invalid OTP. Use demo verification code: 123456.");
+                    return View(model);
+                }
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(model.Password) || model.Password.Trim() != retailer.Password)
+                {
+                    ModelState.AddModelError("Password", "Incorrect password. (Default retailer password is: Password@123)");
+                    return View(model);
+                }
+            }
+
+            // Sign In Retailer
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, retailer.OwnerName),
+                new Claim(ClaimTypes.Email, retailer.Email),
+                new Claim(ClaimTypes.Role, "Retailer"),
+                new Claim("RetailerId", retailer.Id.ToString()),
+                new Claim("BusinessName", retailer.BusinessName),
+                new Claim("PortalType", "Retailer")
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7)
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties);
+
+            TempData["SuccessMessage"] = $"Welcome {retailer.BusinessName}! Wholesale margins and retailer pricing are now unlocked.";
+            return RedirectToAction("Index", "RetailerPortal");
+        }
+
+        // ==========================================
+        // FORGOT PASSWORD FOR RETAILERS
+        // ==========================================
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(string emailOrPhone)
+        {
+            if (string.IsNullOrWhiteSpace(emailOrPhone))
+            {
+                ViewBag.Error = "Please enter your registered email or phone.";
+                return View();
+            }
+
+            var term = emailOrPhone.Trim().ToLower();
+            var retailer = await _context.Retailers.FirstOrDefaultAsync(r => r.Email.ToLower() == term || r.Phone == term);
+
+            if (retailer != null)
+            {
+                ViewBag.Success = $"Password reset link / temporary PIN has been dispatched to {retailer.Email}. Your default password is: Password@123.";
+            }
+            else
+            {
+                ViewBag.Error = "No retailer account found matching this identifier.";
+            }
+
+            return View();
+        }
+
+        // ==========================================
+        // 3. ADMIN LOGIN (Strict ID & Password)
+        // Role: "Admin"
         // ID: ganeshenterprises@gmail.com
         // Password: Admin@123
         // ==========================================
@@ -167,17 +306,7 @@ namespace GaneshEnterprises.Controllers
         }
 
         // ==========================================
-        // RETAILER LOGIN (Legacy/Inert redirect)
-        // ==========================================
-        [HttpGet]
-        public IActionResult RetailerLogin()
-        {
-            // Redirect retailer login attempts to CustomerLogin or AdminLogin
-            return RedirectToAction("CustomerLogin");
-        }
-
-        // ==========================================
-        // LOGOUT
+        // LOGOUT (Works for Customer, Retailer, Admin)
         // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]

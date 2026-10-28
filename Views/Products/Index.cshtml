@@ -6,6 +6,7 @@
     var currentSizeFilter = ViewData["CurrentSizeFilter"] as GaneshEnterprises.Models.BagSize?;
     var currentSort = ViewData["CurrentSort"] as string;
     var isAdmin = User.IsInRole("Admin");
+    var isRetailer = User.IsInRole("Retailer");
     var isCustomer = User.IsInRole("Customer");
 
     var smallCount = Model.Count(p => p.BagSize == GaneshEnterprises.Models.BagSize.Small);
@@ -16,7 +17,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
     <div>
         <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-3 py-1 rounded-pill mb-1">
-            <i class="bi bi-cart3 me-1"></i> Customer Catalog &bull; Small, Medium &amp; Large
+            <i class="bi bi-cart3 me-1"></i> Plastic Bags Catalog &bull; Small, Medium &amp; Large
         </span>
         <h2 class="fw-bold text-dark mb-1">
             <i class="bi bi-boxes text-primary me-2"></i>Plastic Bags Product Catalog
@@ -25,7 +26,7 @@
             Browse Ganesh Enterprises' Small, Medium, and Large plastic bags. Transparent rates with instant order placement.
         </p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
         @if (isAdmin)
         {
             <a asp-controller="Admin" asp-action="Products" class="btn btn-danger btn-sm fw-bold">
@@ -34,24 +35,53 @@
             <a asp-action="Create" class="btn btn-outline-primary btn-sm fw-bold">
                 <i class="bi bi-plus-circle me-1"></i> Add Bag
             </a>
+            <a asp-controller="Orders" asp-action="Create" class="btn btn-primary btn-sm fw-bold">
+                <i class="bi bi-cart-plus-fill me-1"></i> Place Order
+            </a>
+        }
+        else if (isRetailer)
+        {
+            <a asp-controller="RetailerPortal" asp-action="Index" class="btn btn-warning btn-sm text-dark fw-bold">
+                <i class="bi bi-tags-fill me-1"></i> View Wholesale Margins
+            </a>
+            <a asp-controller="RetailerPortal" asp-action="PlaceOrder" class="btn btn-dark btn-sm fw-bold">
+                <i class="bi bi-cart-plus-fill me-1"></i> Place Bulk Order
+            </a>
         }
         else if (isCustomer)
         {
             <a asp-controller="Orders" asp-action="MyOrders" class="btn btn-outline-primary btn-sm fw-bold">
                 <i class="bi bi-receipt me-1"></i> My Orders
             </a>
+            <a asp-controller="Orders" asp-action="Create" class="btn btn-primary btn-sm fw-bold">
+                <i class="bi bi-cart-plus-fill me-1"></i> Place Order
+            </a>
         }
         else
         {
-            <a asp-controller="Account" asp-action="CustomerLogin" class="btn btn-outline-secondary btn-sm fw-semibold">
+            <a asp-controller="Account" asp-action="CustomerLogin" class="btn btn-outline-primary btn-sm fw-semibold">
                 <i class="bi bi-phone me-1"></i> Customer Login
             </a>
+            <a asp-controller="Account" asp-action="RetailerLogin" class="btn btn-outline-warning text-dark btn-sm fw-semibold">
+                <i class="bi bi-shop me-1"></i> Retailer Login
+            </a>
+            <a asp-controller="Orders" asp-action="Create" class="btn btn-primary btn-sm fw-bold">
+                <i class="bi bi-cart-plus-fill me-1"></i> Place Order
+            </a>
         }
-        <a asp-controller="Orders" asp-action="Create" class="btn btn-primary btn-sm fw-bold">
-            <i class="bi bi-cart-plus-fill me-1"></i> Place Order
-        </a>
     </div>
 </div>
+
+@if (isRetailer)
+{
+    <div class="alert alert-warning border-0 shadow-sm d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2" role="alert">
+        <div>
+            <i class="bi bi-info-circle-fill me-2 text-warning fs-5"></i>
+            <strong>Retailer Partner Notice:</strong> You are currently viewing consumer catalog rates. Switch to your Retailer Portal to view discounted wholesale rates and profit margins.
+        </div>
+        <a asp-controller="RetailerPortal" asp-action="Index" class="btn btn-sm btn-dark fw-bold">Open Retailer Portal &rarr;</a>
+    </div>
+}
 
 <!-- Search, Filter & Size Pill Bar -->
 <div class="ge-card mb-4 shadow-sm border-0">
@@ -215,10 +245,20 @@
                             </td>
                             <td class="text-end">
                                 <div class="btn-group" role="group">
-                                    <a asp-controller="Orders" asp-action="Create" asp-route-productId="@item.Id" 
-                                       class="btn btn-sm btn-success fw-semibold" title="Place customer order">
-                                        <i class="bi bi-cart-plus"></i> Order
-                                    </a>
+                                    @if (isRetailer)
+                                    {
+                                        <a asp-controller="RetailerPortal" asp-action="PlaceOrder" asp-route-productId="@item.Id" 
+                                           class="btn btn-sm btn-warning text-dark fw-bold" title="Order at wholesale rate">
+                                            <i class="bi bi-cart-plus"></i> Wholesale
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="Orders" asp-action="Create" asp-route-productId="@item.Id" 
+                                           class="btn btn-sm btn-success fw-semibold" title="Place customer order">
+                                            <i class="bi bi-cart-plus"></i> Order
+                                        </a>
+                                    }
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light border" title="View Details">
                                         <i class="bi bi-eye"></i>
                                     </a>

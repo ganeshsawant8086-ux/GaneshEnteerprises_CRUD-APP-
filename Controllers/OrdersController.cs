@@ -140,7 +140,24 @@ namespace GaneshEnterprises.Controllers
                 return View(order);
             }
 
-            // 2. If Customer: check phone match strictly
+            // 2. If Retailer: check retailer match strictly
+            if (User.IsInRole("Retailer"))
+            {
+                var retailerIdClaim = User.FindFirst("RetailerId")?.Value;
+                var businessName = User.FindFirst("BusinessName")?.Value;
+                int.TryParse(retailerIdClaim, out int retailerId);
+
+                if ((order.RetailerId.HasValue && order.RetailerId.Value == retailerId) ||
+                    (!string.IsNullOrEmpty(businessName) && order.CustomerName == businessName))
+                {
+                    return View(order);
+                }
+
+                TempData["ErrorMessage"] = "Access Denied: You can only view orders placed by your retail business.";
+                return RedirectToAction("Index", "RetailerPortal");
+            }
+
+            // 3. If Customer: check phone match strictly
             if (User.IsInRole("Customer"))
             {
                 var customerPhone = User.FindFirst(ClaimTypes.MobilePhone)?.Value;

@@ -6,9 +6,11 @@
     var enterprise = EnterpriseOptions.Value;
     var isAuthenticated = User.Identity != null && User.Identity.IsAuthenticated;
     var isAdmin = isAuthenticated && User.IsInRole("Admin");
+    var isRetailer = isAuthenticated && User.IsInRole("Retailer");
     var isCustomer = isAuthenticated && User.IsInRole("Customer");
     var customerPhone = isCustomer ? User.FindFirst(ClaimTypes.MobilePhone)?.Value : null;
-    var displayName = isCustomer ? (!string.IsNullOrEmpty(customerPhone) ? $"+91 {customerPhone}" : "Customer") : (User.Identity?.Name ?? "User");
+    var businessName = User.FindFirst("BusinessName")?.Value ?? User.Identity?.Name ?? "Retailer";
+    var displayName = isCustomer ? (!string.IsNullOrEmpty(customerPhone) ? $"+91 {customerPhone}" : "Customer") : businessName;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -32,7 +34,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <!-- Top Branding & Portal Bar -->
+    <!-- Top Branding & Multi-Role Portal Bar -->
     <header class="brand-topbar">
         <div class="container">
             <div class="d-flex flex-wrap justify-content-between align-items-center py-2 gap-3">
@@ -66,24 +68,34 @@
                     </div>
                 </div>
 
-                <!-- Up-side Portal Chooser / Account Actions -->
+                <!-- Up-side Portal Chooser & Role Action Indicators -->
                 <div class="d-flex align-items-center flex-wrap gap-2">
                     <!-- Customer Store Link -->
                     <a asp-controller="Products" asp-action="Index" class="btn btn-sm btn-outline-light border-opacity-50">
                         <i class="bi bi-boxes text-warning me-1"></i> Products Catalog
                     </a>
 
-                    <!-- Customer Login or My Orders -->
+                    <!-- Role-Specific Portal Button or Login Links -->
                     @if (isCustomer)
                     {
-                        <a asp-controller="Orders" asp-action="MyOrders" class="btn btn-sm btn-warning text-dark fw-bold">
-                            <i class="bi bi-person-check-fill me-1"></i> My Orders (@displayName)
+                        <a asp-controller="Orders" asp-action="MyOrders" class="btn btn-sm btn-info text-dark fw-bold">
+                            <i class="bi bi-person-check-fill me-1"></i> Customer (@displayName)
+                        </a>
+                    }
+                    else if (isRetailer)
+                    {
+                        <a asp-controller="RetailerPortal" asp-action="Index" class="btn btn-sm btn-warning text-dark fw-bold">
+                            <i class="bi bi-shop me-1"></i> Retailer: @businessName
                         </a>
                     }
                     else if (!isAdmin)
                     {
-                        <a asp-controller="Account" asp-action="CustomerLogin" class="btn btn-sm btn-outline-warning text-warning fw-semibold">
-                            <i class="bi bi-phone me-1"></i> Customer Login
+                        <!-- Public: Show Both Customer and Retailer options -->
+                        <a asp-controller="Account" asp-action="CustomerLogin" class="btn btn-sm btn-outline-light border-opacity-50 text-white" title="Login with Mobile Number">
+                            <i class="bi bi-phone text-info me-1"></i> Customer Login
+                        </a>
+                        <a asp-controller="Account" asp-action="RetailerLogin" class="btn btn-sm btn-outline-warning text-warning fw-semibold" title="Wholesale Rates & Margins">
+                            <i class="bi bi-shop me-1"></i> Retailer Portal
                         </a>
                     }
 
@@ -96,8 +108,8 @@
                     }
                     else
                     {
-                        <a asp-controller="Account" asp-action="AdminLogin" class="btn btn-sm btn-outline-light border-opacity-50 text-white-50">
-                            <i class="bi bi-shield-lock me-1"></i> Admin Portal
+                        <a asp-controller="Account" asp-action="AdminLogin" class="btn btn-sm btn-outline-light border-opacity-50 text-white-50" title="Management ID & Password">
+                            <i class="bi bi-shield-lock me-1"></i> Admin
                         </a>
                     }
 
@@ -115,7 +127,7 @@
         </div>
     </header>
 
-    <!-- Main Navigation Bar -->
+    <!-- Main Navigation Bar with Strict Role Check & Option Visibility -->
     <nav class="navbar navbar-expand-lg ge-navbar sticky-top">
         <div class="container">
             <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#geNavContent" aria-controls="geNavContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -137,7 +149,7 @@
                         </a>
                     </li>
 
-                    <!-- Customer Orders: STRICTLY ADMIN ONLY -->
+                    <!-- 1. ADMIN ROLE ONLY: Customer Orders -->
                     @if (isAdmin)
                     {
                         <li class="nav-item">
@@ -148,7 +160,7 @@
                         </li>
                     }
 
-                    <!-- My Orders: Logged in Customer Only -->
+                    <!-- 2. CUSTOMER ROLE ONLY: My Orders -->
                     @if (isCustomer)
                     {
                         <li class="nav-item">
@@ -159,6 +171,24 @@
                         </li>
                     }
 
+                    <!-- 3. RETAILER ROLE ONLY: Wholesale Rates & Margins + Consignments -->
+                    @if (isRetailer)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link text-success fw-bold @(ViewContext.RouteData.Values["controller"]?.ToString() == "RetailerPortal" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" 
+                               asp-controller="RetailerPortal" asp-action="Index">
+                                <i class="bi bi-tags-fill me-1"></i> Wholesale Rates &amp; Margins
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-info @(ViewContext.RouteData.Values["controller"]?.ToString() == "RetailerPortal" && ViewContext.RouteData.Values["action"]?.ToString() == "Tracking" ? "active" : "")" 
+                               asp-controller="RetailerPortal" asp-action="Tracking">
+                                <i class="bi bi-truck me-1"></i> Consignment Tracking
+                            </a>
+                        </li>
+                    }
+
+                    <!-- ADMIN MENU DROPDOWN -->
                     @if (isAdmin)
                     {
                         <li class="nav-item dropdown">
@@ -184,15 +214,57 @@
                 </ul>
 
                 <div class="d-flex align-items-center gap-2">
-                    @if (!isAuthenticated)
+                    @if (isRetailer)
                     {
-                        <a asp-controller="Account" asp-action="CustomerLogin" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-phone me-1"></i> Customer Login
+                        <a asp-controller="RetailerPortal" asp-action="PlaceOrder" class="btn btn-warning btn-sm fw-bold text-dark">
+                            <i class="bi bi-cart-plus-fill me-1"></i> Place Bulk Order
                         </a>
                     }
-                    <a asp-controller="Orders" asp-action="Create" class="btn btn-primary btn-sm fw-bold">
-                        <i class="bi bi-cart-plus me-1"></i> Place Order
-                    </a>
+                    else
+                    {
+                        <a asp-controller="Orders" asp-action="Create" class="btn btn-primary btn-sm fw-bold">
+                            <i class="bi bi-cart-plus me-1"></i> Place Order
+                        </a>
+                    }
+
+                    @if (!isAuthenticated)
+                    {
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle fw-semibold" type="button" id="loginDropDown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-fill me-1"></i> Login
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="loginDropDown">
+                                <li>
+                                    <a class="dropdown-item py-2" asp-controller="Account" asp-action="CustomerLogin">
+                                        <i class="bi bi-phone text-primary me-2"></i>
+                                        <div>
+                                            <strong class="d-block small">Customer Login</strong>
+                                            <small class="text-muted">10-Digit Mobile Number</small>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2" asp-controller="Account" asp-action="RetailerLogin">
+                                        <i class="bi bi-shop text-warning me-2"></i>
+                                        <div>
+                                            <strong class="d-block small">Retailer Portal</strong>
+                                            <small class="text-muted">Wholesale Rates &amp; Margins</small>
+                                        </div>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
+                                    <a class="dropdown-item py-2" asp-controller="Account" asp-action="AdminLogin">
+                                        <i class="bi bi-shield-lock text-danger me-2"></i>
+                                        <div>
+                                            <strong class="d-block small">Admin Portal</strong>
+                                            <small class="text-muted">Management Credentials</small>
+                                        </div>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -223,7 +295,7 @@
         </div>
     </main>
 
-    <!-- Professional Footer -->
+    <!-- Professional Footer with Role-Based Navigation -->
     <footer class="ge-footer">
         <div class="container">
             <div class="row g-4">
@@ -297,14 +369,19 @@
                 </div>
                 <div class="d-flex gap-3">
                     <a asp-controller="Home" asp-action="Index">Home</a>
-                    <a asp-controller="Products" asp-action="Index">Products Catalog</a>
+                    <a asp-controller="Products" asp-action="Index">Customer Catalog</a>
                     @if (isCustomer)
                     {
                         <a asp-controller="Orders" asp-action="MyOrders">My Orders</a>
                     }
+                    else if (isRetailer)
+                    {
+                        <a asp-controller="RetailerPortal" asp-action="Index">Retailer Portal</a>
+                    }
                     else
                     {
                         <a asp-controller="Account" asp-action="CustomerLogin">Customer Login</a>
+                        <a asp-controller="Account" asp-action="RetailerLogin">Retailer Portal</a>
                     }
                     <a asp-controller="Account" asp-action="AdminLogin">Admin Login</a>
                 </div>

@@ -1,12 +1,14 @@
 @using Microsoft.Extensions.Options
 @using GaneshEnterprises.Models
+@using System.Security.Claims
 @inject IOptions<EnterpriseInfo> EnterpriseOptions
 @{
     var enterprise = EnterpriseOptions.Value;
     var isAuthenticated = User.Identity != null && User.Identity.IsAuthenticated;
     var isAdmin = isAuthenticated && User.IsInRole("Admin");
-    var isRetailer = isAuthenticated && User.IsInRole("Retailer");
-    var businessName = User.FindFirst("BusinessName")?.Value ?? User.Identity?.Name ?? "User";
+    var isCustomer = isAuthenticated && User.IsInRole("Customer");
+    var customerPhone = isCustomer ? User.FindFirst(ClaimTypes.MobilePhone)?.Value : null;
+    var displayName = isCustomer ? (!string.IsNullOrEmpty(customerPhone) ? $"+91 {customerPhone}" : "Customer") : (User.Identity?.Name ?? "User");
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -30,7 +32,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <!-- Top Branding & Portal Switcher Bar -->
+    <!-- Top Branding & Portal Bar -->
     <header class="brand-topbar">
         <div class="container">
             <div class="d-flex flex-wrap justify-content-between align-items-center py-2 gap-3">
@@ -66,22 +68,22 @@
 
                 <!-- Up-side Portal Chooser / Account Actions -->
                 <div class="d-flex align-items-center flex-wrap gap-2">
-                    <!-- Customer Portal (Public / No Login) -->
-                    <a asp-controller="Home" asp-action="Index" class="btn btn-sm btn-outline-light border-opacity-50">
-                        <i class="bi bi-cart3 text-warning me-1"></i> Customer Store <span class="badge bg-secondary ms-1 small">No Login</span>
+                    <!-- Customer Store Link -->
+                    <a asp-controller="Products" asp-action="Index" class="btn btn-sm btn-outline-light border-opacity-50">
+                        <i class="bi bi-boxes text-warning me-1"></i> Products Catalog
                     </a>
 
-                    <!-- Retailer Portal Link -->
-                    @if (isRetailer)
+                    <!-- Customer Login or My Orders -->
+                    @if (isCustomer)
                     {
-                        <a asp-controller="RetailerPortal" asp-action="Index" class="btn btn-sm btn-warning text-dark fw-bold">
-                            <i class="bi bi-shop me-1"></i> @businessName (Retailer)
+                        <a asp-controller="Orders" asp-action="MyOrders" class="btn btn-sm btn-warning text-dark fw-bold">
+                            <i class="bi bi-person-check-fill me-1"></i> My Orders (@displayName)
                         </a>
                     }
-                    else
+                    else if (!isAdmin)
                     {
-                        <a asp-controller="Account" asp-action="RetailerLogin" class="btn btn-sm btn-outline-warning text-warning fw-semibold">
-                            <i class="bi bi-shop me-1"></i> Retailer Portal
+                        <a asp-controller="Account" asp-action="CustomerLogin" class="btn btn-sm btn-outline-warning text-warning fw-semibold">
+                            <i class="bi bi-phone me-1"></i> Customer Login
                         </a>
                     }
 
@@ -134,24 +136,25 @@
                             <i class="bi bi-boxes me-1"></i> Products Catalog
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Orders" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" 
-                           asp-controller="Orders" asp-action="Index">
-                            <i class="bi bi-receipt me-1"></i> Customer Orders
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" && ViewContext.RouteData.Values["action"]?.ToString() == "Tracking" ? "active" : "")" 
-                           asp-controller="Home" asp-action="Tracking">
-                            <i class="bi bi-truck me-1 text-primary"></i> Track Order
-                        </a>
-                    </li>
 
-                    @if (isRetailer)
+                    <!-- Customer Orders: STRICTLY ADMIN ONLY -->
+                    @if (isAdmin)
                     {
                         <li class="nav-item">
-                            <a class="nav-link text-success fw-bold" asp-controller="RetailerPortal" asp-action="Index">
-                                <i class="bi bi-tags-fill me-1"></i> Wholesale Rates &amp; Margins
+                            <a class="nav-link text-warning fw-semibold @(ViewContext.RouteData.Values["controller"]?.ToString() == "Orders" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" 
+                               asp-controller="Orders" asp-action="Index">
+                                <i class="bi bi-receipt me-1"></i> Customer Orders
+                            </a>
+                        </li>
+                    }
+
+                    <!-- My Orders: Logged in Customer Only -->
+                    @if (isCustomer)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link text-info fw-semibold @(ViewContext.RouteData.Values["controller"]?.ToString() == "Orders" && ViewContext.RouteData.Values["action"]?.ToString() == "MyOrders" ? "active" : "")" 
+                               asp-controller="Orders" asp-action="MyOrders">
+                                <i class="bi bi-receipt me-1"></i> My Orders
                             </a>
                         </li>
                     }
@@ -181,11 +184,14 @@
                 </ul>
 
                 <div class="d-flex align-items-center gap-2">
-                    <a asp-controller="Home" asp-action="Tracking" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-geo-alt me-1"></i> Track Order
-                    </a>
+                    @if (!isAuthenticated)
+                    {
+                        <a asp-controller="Account" asp-action="CustomerLogin" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-phone me-1"></i> Customer Login
+                        </a>
+                    }
                     <a asp-controller="Orders" asp-action="Create" class="btn btn-primary btn-sm fw-bold">
-                        <i class="bi bi-plus-circle me-1"></i> Place Order (No Login)
+                        <i class="bi bi-cart-plus me-1"></i> Place Order
                     </a>
                 </div>
             </div>
@@ -290,10 +296,17 @@
                     &copy; @DateTime.Now.Year <strong>@enterprise.CompanyName</strong>. All rights reserved. Plastic Bags in Small, Medium &amp; Large sizes.
                 </div>
                 <div class="d-flex gap-3">
-                    <a asp-controller="Home" asp-action="Index">Customer Store</a>
-                    <a asp-controller="Account" asp-action="RetailerLogin">Retailer Portal</a>
+                    <a asp-controller="Home" asp-action="Index">Home</a>
+                    <a asp-controller="Products" asp-action="Index">Products Catalog</a>
+                    @if (isCustomer)
+                    {
+                        <a asp-controller="Orders" asp-action="MyOrders">My Orders</a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="CustomerLogin">Customer Login</a>
+                    }
                     <a asp-controller="Account" asp-action="AdminLogin">Admin Login</a>
-                    <a asp-controller="Home" asp-action="Tracking">Track Order</a>
                 </div>
             </div>
         </div>

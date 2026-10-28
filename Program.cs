@@ -15,14 +15,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Bind enterprise contact details from configuration (editable in appsettings.json)
 builder.Services.Configure<EnterpriseInfo>(builder.Configuration.GetSection("EnterpriseInfo"));
 
-// Add Cookie Authentication for Admin and Retailer sessions
+// Add Cookie Authentication for Admin and Customer sessions
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Account/RetailerLogin";
+        options.LoginPath = "/Account/CustomerLogin";
         options.LogoutPath = "/Account/Logout";
         options.AccessDeniedPath = "/Account/AccessDenied";
-        options.ExpireTimeSpan = TimeSpan.FromHours(12);
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
         options.SlidingExpiration = true;
     });
 
@@ -31,7 +31,7 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Seed initial database and expanded 60 products (20 Small, 20 Medium, 20 Large) with images
+// Seed initial database and expanded 60 products (20 Small, 20 Medium, 20 Large)
 DbInitializer.Initialize(app.Services);
 
 // Configure HTTP request pipeline.

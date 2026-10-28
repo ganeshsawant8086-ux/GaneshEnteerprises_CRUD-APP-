@@ -1,5 +1,9 @@
+using System.Security.Claims;
 using GaneshEnterprises.Data;
 using GaneshEnterprises.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +23,11 @@ namespace GaneshEnterprises.Controllers
             _logger = logger;
         }
 
-        // GET: Orders
+        // ==========================================
+        // ADMIN ONLY: All Orders Master List
+        // Customers/Visitors are strictly prohibited from viewing all orders
+        // ==========================================
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index(string? searchString, string? statusFilter, string? sortOrder)
         {
             ViewData["CurrentSearch"] = searchString;
@@ -70,7 +78,45 @@ namespace GaneshEnterprises.Controllers
             return View(orders);
         }
 
-        // GET: Orders/Details/5
+        // ==========================================
+        // CUSTOMER ONLY: My Orders & Private Tracking
+        // Strict Data Isolation: Customers only see their own orders!
+        // ==========================================
+        [Authorize(Roles = "Customer")]
+        public async Task<IActionResult> MyOrders()
+        {
+            var customerPhone = User.FindFirst(ClaimTypes.MobilePhone)?.Value;
+            if (string.IsNullOrWhiteSpace(customerPhone))
+            {
+                return RedirectToAction("CustomerLogin", "Account");
+            }
+
+            // Extract last 10 digits
+            var digitsOnly = new string(customerPhone.Where(char.IsDigit).ToArray());
+            var canonicalPhone = digitsOnly.Length > 10 ? digitsOnly.Substring(digitsOnly.Length - 10) : digitsOnly;
+
+            // Strictly filter by this customer's mobile number only
+            var customerOrders = await _context.Orders
+                .Include(o => o.Product)
+                .Include(o => o.TrackingUpdates)
+                .Include(o => o.OrderItems)
+                .Where(o => o.ContactNumber.Contains(canonicalPhone))
+                .OrderByDescending(o => o.OrderDate)
+                .ThenByDescending(o => o.Id)
+                .ToListAsync();
+
+            ViewBag.CustomerPhone = canonicalPhone;
+            ViewBag.CustomerName = User.Identity?.Name ?? "Customer";
+
+            return View(customerOrders);
+        }
+
+        // ==========================================
+        // ORDER DETAILS / RECEIPT
+        // Admin: Can view any order
+        // Customer: Can ONLY view their own order
+        // Public/Unauthenticated: Redirected to login
+        // ==========================================
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -84,14 +130,44 @@ namespace GaneshEnterprises.Controllers
 
             if (order == null)
             {
-                TempData["ErrorMessage"] = "Order not found.";
-                return RedirectToAction(nameof(Index));
+                TempData["ErrorMessage"] = "Order record not found.";
+                return RedirectToAction("Index", "Home");
             }
 
-            return View(order);
+            // 1. If Admin: full access
+            if (User.IsInRole("Admin"))
+            {
+                return View(order);
+            }
+
+            // 2. If Customer: check phone match strictly
+            if (User.IsInRole("Customer"))
+            {
+                var customerPhone = User.FindFirst(ClaimTypes.MobilePhone)?.Value;
+                var customerDigits = new string((customerPhone ?? "").Where(char.IsDigit).ToArray());
+                var canonicalCustomerPhone = customerDigits.Length > 10 ? customerDigits.Substring(customerDigits.Length - 10) : customerDigits;
+
+                var orderDigits = new string((order.ContactNumber ?? "").Where(char.IsDigit).ToArray());
+                var canonicalOrderPhone = orderDigits.Length > 10 ? orderDigits.Substring(orderDigits.Length - 10) : orderDigits;
+
+                if (!string.IsNullOrEmpty(canonicalCustomerPhone) && canonicalCustomerPhone == canonicalOrderPhone)
+                {
+                    return View(order);
+                }
+
+                // Privacy protection: Cannot view someone else's order
+                TempData["ErrorMessage"] = "Access Denied: You can only view orders placed with your own mobile number.";
+                return RedirectToAction(nameof(MyOrders));
+            }
+
+            // 3. Unauthenticated user: require Customer Login
+            TempData["ErrorMessage"] = "Please sign in with your mobile number to view this order.";
+            return RedirectToAction("CustomerLogin", "Account", new { returnUrl = Url.Action("Details", new { id }) });
         }
 
-        // GET: Orders/Create (No Login Required for Customers)
+        // ==========================================
+        // CREATE ORDER (Public / Customer)
+        // ==========================================
         public async Task<IActionResult> Create(int? productId)
         {
             await PopulateProductDropDownList(productId);
@@ -110,6 +186,17 @@ namespace GaneshEnterprises.Controllers
                 order.ProductId = productId.Value;
             }
 
+            // Auto-populate customer details if logged in
+            if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Customer"))
+            {
+                order.CustomerName = User.Identity.Name ?? string.Empty;
+                var phone = User.FindFirst(ClaimTypes.MobilePhone)?.Value;
+                if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    order.ContactNumber = phone;
+                }
+            }
+
             return View(order);
         }
 
@@ -118,6 +205,16 @@ namespace GaneshEnterprises.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Order order, string? cartItemsJson)
         {
+            // If logged in as Customer, enforce their logged-in phone number for security
+            if (User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Customer"))
+            {
+                var loggedPhone = User.FindFirst(ClaimTypes.MobilePhone)?.Value;
+                if (!string.IsNullOrWhiteSpace(loggedPhone))
+                {
+                    order.ContactNumber = loggedPhone;
+                }
+            }
+
             List<OrderItemDto>? cartItems = null;
             if (!string.IsNullOrWhiteSpace(cartItemsJson))
             {
@@ -144,7 +241,7 @@ namespace GaneshEnterprises.Controllers
                 }
                 if (string.IsNullOrWhiteSpace(order.ContactNumber))
                 {
-                    ModelState.AddModelError("ContactNumber", "Contact number is required.");
+                    ModelState.AddModelError("ContactNumber", "10-digit mobile number is required.");
                 }
 
                 if (ModelState.IsValid)
@@ -189,6 +286,9 @@ namespace GaneshEnterprises.Controllers
                     };
                     _context.OrderTrackings.Add(tracking);
                     await _context.SaveChangesAsync();
+
+                    // If not authenticated, sign in user with this phone number automatically
+                    await EnsureCustomerSessionAsync(order.CustomerName, order.ContactNumber);
 
                     TempData["SuccessMessage"] = $"Order #{order.Id} placed successfully with {cartItems.Count} product(s)! Tracking Reference: {tracking.TrackingNumber}";
                     return RedirectToAction(nameof(Details), new { id = order.Id });
@@ -242,6 +342,9 @@ namespace GaneshEnterprises.Controllers
                     _context.OrderTrackings.Add(tracking);
                     await _context.SaveChangesAsync();
 
+                    // If not authenticated, sign in user with this phone number automatically
+                    await EnsureCustomerSessionAsync(order.CustomerName, order.ContactNumber);
+
                     TempData["SuccessMessage"] = $"Order #{order.Id} placed successfully! Tracking Reference: {tracking.TrackingNumber}";
                     return RedirectToAction(nameof(Details), new { id = order.Id });
                 }
@@ -252,7 +355,34 @@ namespace GaneshEnterprises.Controllers
             return View(order);
         }
 
-        // GET: Orders/Edit/5
+        // Helper to sign in customer if not already authenticated
+        private async Task EnsureCustomerSessionAsync(string customerName, string contactNumber)
+        {
+            if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                var digits = new string(contactNumber.Where(char.IsDigit).ToArray());
+                var canonical = digits.Length > 10 ? digits.Substring(digits.Length - 10) : digits;
+
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, !string.IsNullOrWhiteSpace(customerName) ? customerName : $"Customer ({canonical})"),
+                    new Claim(ClaimTypes.MobilePhone, canonical),
+                    new Claim(ClaimTypes.Role, "Customer"),
+                    new Claim("PortalType", "Customer")
+                };
+
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity),
+                    new AuthenticationProperties { IsPersistent = true, ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30) });
+            }
+        }
+
+        // ==========================================
+        // ADMIN ONLY: Edit Order
+        // ==========================================
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -269,9 +399,9 @@ namespace GaneshEnterprises.Controllers
             return View(order);
         }
 
-        // POST: Orders/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, Order order)
         {
             if (id != order.Id) return NotFound();
@@ -309,7 +439,10 @@ namespace GaneshEnterprises.Controllers
             return View(order);
         }
 
-        // GET: Orders/Delete/5
+        // ==========================================
+        // ADMIN ONLY: Delete Order
+        // ==========================================
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null) return NotFound();
@@ -327,9 +460,9 @@ namespace GaneshEnterprises.Controllers
             return View(order);
         }
 
-        // POST: Orders/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var order = await _context.Orders.FindAsync(id);

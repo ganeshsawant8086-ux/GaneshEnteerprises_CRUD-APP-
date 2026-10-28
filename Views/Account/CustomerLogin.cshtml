@@ -1,0 +1,83 @@
+@model GaneshEnterprises.Models.CustomerLoginViewModel
+@{
+    ViewData["Title"] = "Customer Login - Ganesh Enterprises";
+    Layout = "_Layout";
+}
+
+<div class="row justify-content-center py-5">
+    <div class="col-md-5">
+        <div class="text-center mb-4">
+            <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #0f766e, #1e3a8a); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(15, 118, 110, 0.3);">
+                <i class="bi bi-phone-fill text-warning fs-2"></i>
+            </div>
+            <h2 class="fw-bold text-dark mt-3 mb-1">Customer Portal Login</h2>
+            <p class="text-muted small">Access your order history and live consignment tracking with your mobile number.</p>
+        </div>
+
+        <div class="ge-card shadow-lg border-0">
+            <div class="ge-card-header bg-primary text-white text-center py-3">
+                <span class="fw-bold text-uppercase tracking-wider small">
+                    <i class="bi bi-shield-check me-1"></i> Mobile Number Verification
+                </span>
+            </div>
+            <div class="ge-card-body p-4">
+                <form asp-action="CustomerLogin" method="post">
+                    <input type="hidden" asp-for="ReturnUrl" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" role="alert"></div>
+
+                    <!-- 10-Digit Mobile Number Field -->
+                    <div class="mb-4">
+                        <label asp-for="MobileNumber" class="form-label fw-bold text-dark">
+                            <i class="bi bi-telephone-fill text-primary me-1"></i> Enter 10-Digit Mobile Number
+                        </label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light fw-bold text-muted border-end-0">
+                                🇮🇳 +91
+                            </span>
+                            <input asp-for="MobileNumber" class="form-control form-control-lg border-start-0" 
+                                   type="tel" 
+                                   maxlength="10" 
+                                   placeholder="e.g. 9823045678" 
+                                   autofocus 
+                                   required />
+                        </div>
+                        <span asp-validation-for="MobileNumber" class="text-danger small mt-1 d-block"></span>
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-info-circle me-1"></i> No password or OTP required. Simply enter your contact number.
+                        </small>
+                    </div>
+
+                    <!-- Privacy Guarantee Card -->
+                    <div class="p-3 mb-4 rounded-3 bg-light border border-primary-subtle">
+                        <div class="d-flex align-items-start gap-2">
+                            <i class="bi bi-shield-lock-fill text-success fs-5 mt-1"></i>
+                            <div>
+                                <strong class="text-dark small d-block">Private &amp; Isolated Customer Access</strong>
+                                <span class="text-muted small">
+                                    When you log in, you will <strong>only</strong> see your own orders and order tracking details. Other customer data is strictly hidden and protected.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm fs-6" style="background: linear-gradient(135deg, #0f766e, #1e3a8a); border: none;">
+                        <i class="bi bi-box-arrow-in-right me-2"></i> Continue to My Orders
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4 px-2">
+            <a asp-controller="Home" asp-action="Index" class="text-secondary small text-decoration-none">
+                <i class="bi bi-arrow-left me-1"></i> Return to Homepage
+            </a>
+            <a asp-controller="Account" asp-action="AdminLogin" class="text-muted small text-decoration-none">
+                <i class="bi bi-shield-lock me-1"></i> Admin Portal
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -42,11 +42,11 @@ namespace GaneshEnterprises.Controllers
                     .Take(6)
                     .ToListAsync();
 
-                var recentOrders = await _context.Orders
-                    .Include(o => o.Product)
-                    .OrderByDescending(o => o.Id)
-                    .Take(5)
-                    .ToListAsync();
+                // Only query recent orders if user is Admin to prevent data exposure
+                var isAdmin = User.Identity != null && User.Identity.IsAuthenticated && User.IsInRole("Admin");
+                var recentOrders = isAdmin 
+                    ? await _context.Orders.Include(o => o.Product).OrderByDescending(o => o.Id).Take(5).ToListAsync()
+                    : new List<Order>();
 
                 var viewModel = new HomeDashboardViewModel
                 {
@@ -73,47 +73,25 @@ namespace GaneshEnterprises.Controllers
         }
 
         // ==========================================
-        // CUSTOMER ORDER TRACKING (NO LOGIN REQUIRED)
-        // Customers can track order by Order Number or Tracking Code or Phone
+        // TRACKING: Redirect to protected customer or admin portal
+        // Public unauthenticated tracking search is disabled for privacy
         // ==========================================
         [HttpGet]
-        public async Task<IActionResult> Tracking(string? query)
+        public IActionResult Tracking()
         {
-            ViewBag.EnterpriseInfo = _enterpriseInfo;
-            ViewBag.SearchQuery = query;
-
-            if (string.IsNullOrWhiteSpace(query))
+            if (User.Identity != null && User.Identity.IsAuthenticated)
             {
-                return View(new OrderTrackingViewModel());
+                if (User.IsInRole("Admin"))
+                {
+                    return RedirectToAction("Tracking", "Admin");
+                }
+                if (User.IsInRole("Customer"))
+                {
+                    return RedirectToAction("MyOrders", "Orders");
+                }
             }
 
-            var term = query.Trim().ToLower();
-
-            var trackingList = await _context.OrderTrackings
-                .Include(t => t.Order)
-                .ThenInclude(o => o!.Product)
-                .Where(t => t.TrackingNumber.ToLower().Contains(term) ||
-                            t.OrderId.ToString() == term ||
-                            (t.Order != null && (t.Order.ContactNumber.Contains(term) ||
-                                                 (t.Order.OrderNumber != null && t.Order.OrderNumber.ToLower().Contains(term)) ||
-                                                 t.Order.CustomerName.ToLower().Contains(term))))
-                .OrderByDescending(t => t.UpdatedAt)
-                .ToListAsync();
-
-            var order = trackingList.FirstOrDefault()?.Order;
-            if (order == null && int.TryParse(term, out int orderId))
-            {
-                order = await _context.Orders.Include(o => o.Product).FirstOrDefaultAsync(o => o.Id == orderId);
-            }
-
-            var model = new OrderTrackingViewModel
-            {
-                SearchQuery = query,
-                SelectedOrder = order,
-                TrackingMilestones = trackingList
-            };
-
-            return View(model);
+            return RedirectToAction("CustomerLogin", "Account");
         }
 
         public IActionResult About()

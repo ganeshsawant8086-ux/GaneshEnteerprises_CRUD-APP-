@@ -3,26 +3,46 @@
 @{
     ViewData["Title"] = "Order Details #" + Model.Id;
     var totalAmount = Model.Product != null ? Model.Product.Price * Model.Quantity : 0;
+    var isAdmin = User.IsInRole("Admin");
+    var isCustomer = User.IsInRole("Customer");
 }
 
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-arrow-left me-1"></i> Back to Orders List
-            </a>
-            <div class="d-flex gap-2">
-                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary btn-sm fw-semibold">
-                    <i class="bi bi-pencil-square me-1"></i> Edit Order
+            @if (isAdmin)
+            {
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to All Orders
                 </a>
-                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger btn-sm fw-semibold">
-                    <i class="bi bi-trash3 me-1"></i> Delete Order
+                <div class="d-flex gap-2">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary btn-sm fw-semibold">
+                        <i class="bi bi-pencil-square me-1"></i> Edit Order
+                    </a>
+                    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger btn-sm fw-semibold">
+                        <i class="bi bi-trash3 me-1"></i> Delete Order
+                    </a>
+                </div>
+            }
+            else if (isCustomer)
+            {
+                <a asp-action="MyOrders" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to My Orders
                 </a>
-            </div>
+                <a asp-action="Create" class="btn btn-primary btn-sm fw-semibold">
+                    <i class="bi bi-cart-plus me-1"></i> Place Another Order
+                </a>
+            }
+            else
+            {
+                <a asp-controller="Products" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Products
+                </a>
+            }
         </div>
 
         <!-- Receipt / Order Slip Card -->
-        <div class="ge-card mb-4">
+        <div class="ge-card mb-4 shadow-sm border-0">
             <div class="ge-card-header bg-light d-flex justify-content-between align-items-center">
                 <div>
                     <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-receipt text-primary me-2"></i>Order Slip #@Model.Id</h5>
@@ -37,9 +57,9 @@
                     {
                         <span class="badge-status-processing fs-6">In Production / Processing</span>
                     }
-                    else if (Model.Status == "Completed")
+                    else if (Model.Status == "Completed" || Model.Status == "Delivered")
                     {
-                        <span class="badge-status-completed fs-6">Order Completed</span>
+                        <span class="badge-status-completed fs-6">@Model.Status</span>
                     }
                     else
                     {
@@ -163,11 +183,48 @@
                         <strong class="text-dark">Ganesh Enterprises</strong>
                     </div>
                     <div class="text-end">
-                        <span class="text-muted small d-block">Status:</span>
+                        <span class="text-muted small d-block">Current Status:</span>
                         <strong class="text-dark">@Model.Status</strong>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Consignment Tracking Timeline -->
+        @if (Model.TrackingUpdates != null && Model.TrackingUpdates.Any())
+        {
+            <div class="ge-card shadow-sm border-0 mb-4">
+                <div class="ge-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-dark">
+                        <i class="bi bi-truck text-danger me-2"></i>Consignment Milestones &amp; Tracking
+                    </h5>
+                    <span class="badge bg-danger-subtle text-danger font-monospace">
+                        Code: @Model.TrackingUpdates.First().TrackingNumber
+                    </span>
+                </div>
+                <div class="ge-card-body p-4">
+                    <ul class="timeline list-unstyled position-relative m-0 ps-3">
+                        @foreach (var track in Model.TrackingUpdates.OrderByDescending(t => t.UpdatedAt))
+                        {
+                            <li class="mb-3 position-relative ps-4" style="border-left: 2px solid #0f766e;">
+                                <div class="position-absolute" style="left: -7px; top: 0; width: 12px; height: 12px; border-radius: 50%; background-color: #0f766e;"></div>
+                                <div class="d-flex justify-content-between align-items-baseline">
+                                    <strong class="text-dark">@track.CurrentStatus</strong>
+                                    <small class="text-muted">@track.UpdatedAt.ToString("dd-MMM-yyyy hh:mm tt")</small>
+                                </div>
+                                <div class="small text-muted mb-1">
+                                    <i class="bi bi-geo-alt text-danger me-1"></i>Location: <strong>@track.CurrentLocation</strong>
+                                    &bull; Carrier: <strong>@track.CarrierName</strong>
+                                </div>
+                                @if (!string.IsNullOrEmpty(track.Notes))
+                                {
+                                    <p class="small text-secondary mb-0 bg-light p-2 rounded">@track.Notes</p>
+                                }
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
     </div>
 </div>

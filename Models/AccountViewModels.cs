@@ -18,6 +18,16 @@ namespace GaneshEnterprises.Models
         public bool RememberMe { get; set; } = true;
     }
 
+    public class CustomerLoginViewModel
+    {
+        [Required(ErrorMessage = "Please enter your 10-digit mobile number.")]
+        [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Please enter a valid 10-digit mobile number.")]
+        [Display(Name = "10-Digit Mobile Number")]
+        public string MobileNumber { get; set; } = string.Empty;
+
+        public string? ReturnUrl { get; set; }
+    }
+
     public class RetailerLoginViewModel
     {
         [Required(ErrorMessage = "Registered Email or Phone is required.")]

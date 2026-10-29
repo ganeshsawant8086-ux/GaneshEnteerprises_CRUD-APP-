@@ -2,12 +2,13 @@
 @{
     ViewData["Title"] = "Admin - Manage Orders";
     var currentStatus = ViewBag.CurrentStatus as string;
+    var currentOrderType = ViewBag.CurrentOrderType as string;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <div>
         <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-1">&larr; Back to Admin Dashboard</a>
-        <h2 class="fw-bold text-dark mb-0"><i class="bi bi-receipt-cutoff text-warning me-2"></i>Orders Pipeline (All 20 Records)</h2>
+        <h2 class="fw-bold text-dark mb-0"><i class="bi bi-receipt-cutoff text-warning me-2"></i>Orders Pipeline</h2>
         <p class="text-muted small mb-0">Review customer and retailer bulk requisitions, update order statuses, and verify billing.</p>
     </div>
     <a asp-action="ManageTracking" class="btn btn-primary fw-bold">
@@ -15,15 +16,23 @@
     </a>
 </div>
 
-<!-- Status Filter Pills -->
+<!-- Status & Type Filter Pills -->
 <div class="ge-card mb-4 p-3">
-    <div class="d-flex flex-wrap align-items-center gap-2">
-        <span class="small fw-bold text-muted me-2"><i class="bi bi-filter me-1"></i>Filter by Status:</span>
-        <a asp-action="Orders" class="btn btn-sm @(string.IsNullOrEmpty(currentStatus) ? "btn-dark" : "btn-light border")">All (20)</a>
-        <a asp-action="Orders" asp-route-statusFilter="Pending" class="btn btn-sm @(currentStatus == "Pending" ? "btn-warning text-dark" : "btn-outline-warning")">Pending</a>
-        <a asp-action="Orders" asp-route-statusFilter="Processing" class="btn btn-sm @(currentStatus == "Processing" ? "btn-primary" : "btn-outline-primary")">Processing</a>
-        <a asp-action="Orders" asp-route-statusFilter="Shipped" class="btn btn-sm @(currentStatus == "Shipped" ? "btn-info text-dark" : "btn-outline-info")">Shipped</a>
-        <a asp-action="Orders" asp-route-statusFilter="Delivered" class="btn btn-sm @(currentStatus == "Delivered" ? "btn-success" : "btn-outline-success")">Delivered</a>
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <span class="small fw-bold text-muted me-2"><i class="bi bi-filter me-1"></i>Status:</span>
+            <a asp-action="Orders" asp-route-orderType="@currentOrderType" class="btn btn-sm @(string.IsNullOrEmpty(currentStatus) ? "btn-dark" : "btn-light border")">All Statuses</a>
+            <a asp-action="Orders" asp-route-statusFilter="Pending" asp-route-orderType="@currentOrderType" class="btn btn-sm @(currentStatus == "Pending" ? "btn-warning text-dark" : "btn-outline-warning")">Pending</a>
+            <a asp-action="Orders" asp-route-statusFilter="Processing" asp-route-orderType="@currentOrderType" class="btn btn-sm @(currentStatus == "Processing" ? "btn-primary" : "btn-outline-primary")">Processing</a>
+            <a asp-action="Orders" asp-route-statusFilter="Shipped" asp-route-orderType="@currentOrderType" class="btn btn-sm @(currentStatus == "Shipped" ? "btn-info text-dark" : "btn-outline-info")">Shipped</a>
+            <a asp-action="Orders" asp-route-statusFilter="Delivered" asp-route-orderType="@currentOrderType" class="btn btn-sm @(currentStatus == "Delivered" ? "btn-success" : "btn-outline-success")">Delivered</a>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <span class="small fw-bold text-muted me-2"><i class="bi bi-tag me-1"></i>Type:</span>
+            <a asp-action="Orders" asp-route-statusFilter="@currentStatus" class="btn btn-sm @(string.IsNullOrEmpty(currentOrderType) ? "btn-primary" : "btn-outline-primary")">All Orders</a>
+            <a asp-action="Orders" asp-route-orderType="Customer" asp-route-statusFilter="@currentStatus" class="btn btn-sm @(currentOrderType == "Customer" ? "btn-primary" : "btn-outline-primary")"><i class="bi bi-person me-1"></i>Customer Orders</a>
+            <a asp-action="Orders" asp-route-orderType="Retailer" asp-route-statusFilter="@currentStatus" class="btn btn-sm @(currentOrderType == "Retailer" ? "btn-purple text-white" : "btn-outline-secondary")" style="@(currentOrderType == "Retailer" ? "background-color: #9333ea;" : "")"><i class="bi bi-shop me-1"></i>Retail Orders</a>
+        </div>
     </div>
 </div>
 

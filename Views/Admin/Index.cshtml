@@ -2,6 +2,14 @@
 @{
     ViewData["Title"] = "Admin Control Dashboard";
     var recentRetailers = ViewBag.RecentRetailers as List<GaneshEnterprises.Models.Retailer> ?? new();
+    var deliveredBenefitToday = (decimal)(ViewBag.DeliveredBenefitToday ?? 0m);
+    var deliveredBenefitMonth = (decimal)(ViewBag.DeliveredBenefitMonth ?? 0m);
+    var deliveredBenefitYear = (decimal)(ViewBag.DeliveredBenefitYear ?? 0m);
+    var deliveredBenefitAllTime = (decimal)(ViewBag.DeliveredBenefitAllTime ?? 0m);
+    var deliveredCountToday = (int)(ViewBag.DeliveredCountToday ?? 0);
+    var deliveredCountMonth = (int)(ViewBag.DeliveredCountMonth ?? 0);
+    var deliveredCountYear = (int)(ViewBag.DeliveredCountYear ?? 0);
+    var deliveredCountAllTime = (int)(ViewBag.DeliveredCountAllTime ?? 0);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -11,67 +19,212 @@
         </span>
         <h2 class="fw-bold text-dark mb-0">Admin Control Center</h2>
     </div>
-    <div class="d-flex gap-2">
-        <a asp-action="Products" class="btn btn-outline-primary fw-semibold btn-sm">
-            <i class="bi bi-currency-rupee me-1"></i> Manage Pricing &amp; Margins
+    <div class="d-flex gap-2 flex-wrap">
+        <button type="button" class="btn btn-outline-success fw-semibold btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#stockInventoryModal" onclick="loadStockInventory('all')">
+            <i class="bi bi-layers-half me-1"></i> Stock Health Analyzer (Red / Green)
+        </button>
+        <a asp-action="Products" class="btn btn-outline-primary fw-semibold btn-sm shadow-sm">
+            <i class="bi bi-currency-rupee me-1"></i> Pricing &amp; Margins
         </a>
-        <a asp-action="Retailers" class="btn btn-outline-success fw-semibold btn-sm">
-            <i class="bi bi-people-fill me-1"></i> Manage Retailers (@ViewBag.TotalRetailers)
+        <a asp-action="Retailers" class="btn btn-outline-success fw-semibold btn-sm shadow-sm">
+            <i class="bi bi-people-fill me-1"></i> Retailers (@ViewBag.TotalRetailers)
         </a>
-        <a asp-action="ManageTracking" class="btn btn-primary fw-bold btn-sm">
+        <a asp-action="ManageTracking" class="btn btn-primary fw-bold btn-sm shadow-sm">
             <i class="bi bi-geo-alt-fill me-1"></i> Update Tracking Record
         </a>
     </div>
 </div>
 
-<!-- Admin KPI Cards -->
-<div class="row g-3 mb-4">
+<!-- Admin KPI Cards (Now All Clickable) -->
+<div class="row g-3 mb-3">
+    <!-- Products -->
     <div class="col-xl-2 col-md-4 col-sm-6">
-        <div class="stat-widget">
+        <a asp-action="Products" class="stat-widget stat-widget-clickable text-decoration-none border-primary-subtle" title="Click to manage all bag products and pricing">
             <div>
                 <div class="stat-value text-primary">@ViewBag.TotalProducts</div>
                 <p class="stat-label">Products</p>
+                <small class="text-primary fw-semibold d-block" style="font-size: 0.75rem;"><i class="bi bi-arrow-right-circle me-1"></i>Manage &rarr;</small>
             </div>
-        </div>
+        </a>
     </div>
+
+    <!-- Total Stock (Opens Stock Inventory Modal) -->
     <div class="col-xl-2 col-md-4 col-sm-6">
-        <div class="stat-widget">
+        <div class="stat-widget stat-widget-clickable border-info-subtle" role="button" tabindex="0" data-bs-toggle="modal" data-bs-target="#stockInventoryModal" onclick="loadStockInventory('all')" title="Click to view Down Stock (Red) and High Stock (Green)">
             <div>
-                <div class="stat-value text-info">@(((long)ViewBag.TotalStock).ToString("N0"))</div>
-                <p class="stat-label">Total Stock</p>
+                <div class="stat-value text-info" id="adminTotalStockKpi">@(((long)ViewBag.TotalStock).ToString("N0"))</div>
+                <p class="stat-label">Total Stock (Pcs)</p>
+                <small class="text-info fw-semibold d-block" style="font-size: 0.75rem;"><i class="bi bi-pie-chart-fill me-1"></i>Stock Analyzer &rarr;</small>
             </div>
         </div>
     </div>
+
+    <!-- Retailers -->
     <div class="col-xl-2 col-md-4 col-sm-6">
-        <div class="stat-widget">
+        <a asp-action="Retailers" class="stat-widget stat-widget-clickable text-decoration-none border-success-subtle" title="Click to manage wholesale retailer accounts">
             <div>
                 <div class="stat-value text-success">@ViewBag.TotalRetailers</div>
-                <p class="stat-label">Retailers (10)</p>
+                <p class="stat-label">Retailers</p>
+                <small class="text-success fw-semibold d-block" style="font-size: 0.75rem;"><i class="bi bi-arrow-right-circle me-1"></i>Manage &rarr;</small>
             </div>
-        </div>
+        </a>
     </div>
+
+    <!-- Total Orders -->
     <div class="col-xl-2 col-md-4 col-sm-6">
-        <div class="stat-widget">
+        <a asp-action="Orders" class="stat-widget stat-widget-clickable text-decoration-none border-warning-subtle" title="Click to view all orders">
             <div>
                 <div class="stat-value text-warning">@ViewBag.TotalOrders</div>
-                <p class="stat-label">Orders (20)</p>
+                <p class="stat-label">Total Orders</p>
+                <small class="text-warning-emphasis fw-semibold d-block" style="font-size: 0.75rem;"><i class="bi bi-receipt-cutoff me-1"></i>Pipeline &rarr;</small>
             </div>
-        </div>
+        </a>
     </div>
+
+    <!-- Pending Orders -->
     <div class="col-xl-2 col-md-4 col-sm-6">
-        <div class="stat-widget">
+        <a asp-action="Orders" asp-route-statusFilter="Pending" class="stat-widget stat-widget-clickable text-decoration-none border-danger-subtle" title="Click to fulfill pending orders">
             <div>
                 <div class="stat-value text-danger">@ViewBag.PendingOrders</div>
                 <p class="stat-label">Pending</p>
+                <small class="text-danger fw-semibold d-block" style="font-size: 0.75rem;"><i class="bi bi-clock-history me-1"></i>Process &rarr;</small>
+            </div>
+        </a>
+    </div>
+
+    <!-- Delivered Benefit KPI -->
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-widget stat-widget-clickable border-success-subtle" style="background: #f0fdf4;" role="button" data-bs-toggle="collapse" data-bs-target="#adminBreakdownCollapse" title="Click to toggle delivered benefit breakdown">
+            <div>
+                <div class="stat-value text-success" id="adminKpiBenefit" style="font-size: 1.35rem;">
+                    ₹@deliveredBenefitToday.ToString("N0")
+                </div>
+                <p class="stat-label text-success fw-bold">Delivered Benefit</p>
+                <small class="text-success fw-bold d-block" style="font-size: 0.75rem;"><i class="bi bi-chevron-down me-1"></i>Day/Month &rarr;</small>
             </div>
         </div>
     </div>
-    <div class="col-xl-2 col-md-4 col-sm-6">
-        <div class="stat-widget">
-            <div>
-                <div class="stat-value text-dark" style="font-size: 1.4rem;">₹@(((decimal)ViewBag.TotalRevenue).ToString("N0"))</div>
-                <p class="stat-label">Revenue</p>
+</div>
+
+<!-- TOTAL BENEFIT ANALYTICS HUB (Day, Monthly, Year & Auto Mode) -->
+<div class="benefit-card-widget p-3 p-md-4 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <!-- Left: Icon & Delivered Figure -->
+        <div class="d-flex align-items-center gap-3">
+            <div class="stat-icon-wrapper stat-icon-green shadow-sm" style="width: 58px; height: 58px; font-size: 1.7rem; border-radius: 12px;">
+                <i class="bi bi-cash-stack"></i>
             </div>
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                    <span class="badge bg-success text-white fw-bold px-2 py-1 rounded-pill small">
+                        <i class="bi bi-shield-check me-1"></i> TOTAL BENEFIT (DELIVERED ORDERS)
+                    </span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small" id="adminAutoModeBadge">
+                        <span class="live-pulse-dot"></span> Auto Mode: Live Active
+                    </span>
+                    <span class="text-muted small" id="adminLastUpdated">Syncing...</span>
+                </div>
+                <div class="d-flex align-items-baseline gap-2 flex-wrap">
+                    <div class="stat-value text-success stat-value-highlight mb-0" id="adminBenefitValue" style="font-size: 2.1rem;">
+                        ₹@deliveredBenefitToday.ToString("N0")
+                    </div>
+                    <span class="badge bg-light text-dark border fw-bold" id="adminPeriodBadge">Day (Today)</span>
+                    <small class="text-muted fw-semibold" id="adminBenefitOrdersCount">
+                        <i class="bi bi-box2-heart text-success me-1"></i><span id="adminOrdersCountText">@deliveredCountToday Delivered Order(s)</span>
+                    </small>
+                </div>
+                <small class="text-muted d-block mt-1">
+                    <i class="bi bi-arrow-repeat text-success me-1"></i>Delivered completed amount updates automatically in auto mode.
+                </small>
+            </div>
+        </div>
+
+        <!-- Right: Clickable Options (Day, Monthly, Year, All Time) -->
+        <div class="d-flex flex-column align-items-md-end align-items-start gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="small fw-bold text-muted"><i class="bi bi-sliders me-1"></i>Select Option:</span>
+                <div class="btn-group shadow-sm" role="group" aria-label="Admin Benefit Filter">
+                    <button type="button" class="btn btn-sm btn-success fw-bold benefit-pill-btn admin-period-btn active" data-period="day">
+                        <i class="bi bi-calendar-check me-1"></i> Day
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success fw-bold benefit-pill-btn admin-period-btn" data-period="month">
+                        <i class="bi bi-calendar-month me-1"></i> Monthly
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success fw-bold benefit-pill-btn admin-period-btn" data-period="year">
+                        <i class="bi bi-calendar3 me-1"></i> Year
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-success fw-bold benefit-pill-btn admin-period-btn" data-period="all">
+                        <i class="bi bi-infinity me-1"></i> All Time
+                    </button>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-sm btn-link text-success text-decoration-none p-0 fw-semibold" data-bs-toggle="collapse" data-bs-target="#adminBreakdownCollapse">
+                    <i class="bi bi-table me-1"></i> View Breakdown &amp; Delivered Orders &darr;
+                </button>
+                <span class="text-muted small">|</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill small" id="adminManualRefreshBtn" title="Sync now">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Breakdown Cards & Delivered Orders Table -->
+    <div class="collapse mt-3 pt-3 border-top" id="adminBreakdownCollapse">
+        <div class="row g-2 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="p-2 rounded bg-white border text-center">
+                    <small class="text-muted d-block fw-semibold">📅 Day (Today)</small>
+                    <strong class="text-success fs-6" id="adminCardDayAmount">₹@deliveredBenefitToday.ToString("N0")</strong>
+                    <small class="text-muted d-block" id="adminCardDayCount">@deliveredCountToday delivered</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2 rounded bg-white border text-center">
+                    <small class="text-muted d-block fw-semibold">📆 Monthly (This Month)</small>
+                    <strong class="text-success fs-6" id="adminCardMonthAmount">₹@deliveredBenefitMonth.ToString("N0")</strong>
+                    <small class="text-muted d-block" id="adminCardMonthCount">@deliveredCountMonth delivered</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2 rounded bg-white border text-center">
+                    <small class="text-muted d-block fw-semibold">📈 Year (This Year)</small>
+                    <strong class="text-success fs-6" id="adminCardYearAmount">₹@deliveredBenefitYear.ToString("N0")</strong>
+                    <small class="text-muted d-block" id="adminCardYearCount">@deliveredCountYear delivered</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-2 rounded bg-white border text-center">
+                    <small class="text-muted d-block fw-semibold">💼 All Time</small>
+                    <strong class="text-success fs-6" id="adminCardAllTimeAmount">₹@deliveredBenefitAllTime.ToString("N0")</strong>
+                    <small class="text-muted d-block" id="adminCardAllTimeCount">@deliveredCountAllTime delivered</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive bg-white rounded border">
+            <table class="table table-sm table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Ref #</th>
+                        <th>Customer / Business</th>
+                        <th>Product</th>
+                        <th>Qty</th>
+                        <th>Delivered Amount</th>
+                        <th>Order Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="adminDeliveredOrdersBody">
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-2">
+                            <div class="spinner-border spinner-border-sm text-success me-1" role="status"></div>
+                            Loading delivered orders in auto mode...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -93,7 +246,7 @@
     <div class="col-md-3">
         <a asp-action="Orders" class="ge-card p-3 d-block text-decoration-none border-start border-4 border-warning">
             <h6 class="fw-bold text-dark mb-1"><i class="bi bi-receipt text-warning me-2"></i>Customer &amp; Bulk Orders</h6>
-            <small class="text-muted">Manage all 20 active order shipments</small>
+            <small class="text-muted">Manage all active order shipments</small>
         </a>
     </div>
     <div class="col-md-3">
@@ -110,7 +263,7 @@
         <div class="ge-card">
             <div class="ge-card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-clock-history text-primary me-2"></i>Recent Orders Pipeline</h5>
-                <a asp-action="Orders" class="btn btn-sm btn-light border fw-semibold">View All 20 Orders</a>
+                <a asp-action="Orders" class="btn btn-sm btn-light border fw-semibold">View All Orders</a>
             </div>
             <div class="table-responsive">
                 <table class="ge-table table-hover">
@@ -154,7 +307,7 @@
         <div class="ge-card">
             <div class="ge-card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-people text-success me-2"></i>Retailer Partners</h5>
-                <a asp-action="Retailers" class="btn btn-sm btn-light border fw-semibold">All 10</a>
+                <a asp-action="Retailers" class="btn btn-sm btn-light border fw-semibold">All Retailers</a>
             </div>
             <div class="list-group list-group-flush">
                 @foreach (var ret in recentRetailers)
@@ -179,3 +332,447 @@
         </div>
     </div>
 </div>
+
+<!-- ========================================================================= -->
+<!-- WAREHOUSE STOCK INVENTORY MODAL (RED FOR DOWN STOCK, GREEN FOR HIGH)      -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="stockInventoryModal" tabindex="-1" aria-labelledby="adminStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            
+            <div class="modal-header bg-dark text-white p-3 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="stat-icon-wrapper stat-icon-emerald" style="width: 40px; height: 40px; font-size: 1.25rem;">
+                        <i class="bi bi-layers-half"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="adminStockModalLabel">
+                            Warehouse Stock Inventory &amp; Health Analyzer
+                        </h5>
+                        <small class="text-white-50">
+                            Down Stock (<span class="text-danger fw-bold">&lt; 12,000 pcs</span>) shown in <span class="badge bg-danger text-white">RED</span> &bull; High Stock (<span class="text-success fw-bold">&gt; 25,000 pcs</span>) shown in <span class="badge bg-success text-white">GREEN</span>
+                        </small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4 bg-light">
+                
+                <!-- Stock Health KPI Highlights -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3 col-6">
+                        <div class="ge-card p-3 border-start border-4 border-info h-100 bg-white">
+                            <small class="text-muted text-uppercase fw-bold">Total Stock Units</small>
+                            <h3 class="fw-bold text-dark mb-0" id="modalTotalStockUnits">@(((long)ViewBag.TotalStock).ToString("N0"))</h3>
+                            <small class="text-muted">Across @ViewBag.TotalProducts bag models</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="ge-card p-3 border-start border-4 border-danger h-100 bg-white" role="button" onclick="filterStockModal('Low')">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-danger text-uppercase fw-bold">🔴 Down Stock (Low)</small>
+                                <span class="badge bg-danger text-white">Alert</span>
+                            </div>
+                            <h3 class="fw-bold text-danger mb-0" id="modalLowStockCount">--</h3>
+                            <small class="text-muted">&lt; 12,000 pcs (Click to filter)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="ge-card p-3 border-start border-4 border-warning h-100 bg-white" role="button" onclick="filterStockModal('Mid')">
+                            <small class="text-warning-emphasis text-uppercase fw-bold">🟡 Moderate Stock</small>
+                            <h3 class="fw-bold text-warning-emphasis mb-0" id="modalMidStockCount">--</h3>
+                            <small class="text-muted">12,000 to 25,000 pcs</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="ge-card p-3 border-start border-4 border-success h-100 bg-white" role="button" onclick="filterStockModal('High')">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-success text-uppercase fw-bold">🟢 High Stock (Healthy)</small>
+                                <span class="badge bg-success text-white">Abundant</span>
+                            </div>
+                            <h3 class="fw-bold text-success mb-0" id="modalHighStockCount">--</h3>
+                            <small class="text-muted">&gt; 25,000 pcs (Click to filter)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Stock Health Visual Segmented Meter -->
+                <div class="ge-card p-3 mb-4 bg-white border">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small fw-bold text-dark"><i class="bi bi-pie-chart me-1"></i>Warehouse Stock Health Composition</span>
+                        <div class="small">
+                            <span class="text-danger fw-bold me-2"><i class="bi bi-circle-fill text-danger me-1"></i>Down Stock (Red)</span>
+                            <span class="text-warning fw-bold me-2"><i class="bi bi-circle-fill text-warning me-1"></i>Moderate (Amber)</span>
+                            <span class="text-success fw-bold"><i class="bi bi-circle-fill text-success me-1"></i>High Stock (Green)</span>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 12px;" id="stockHealthProgressBar">
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: 20%;" title="Down Stock"></div>
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: 60%;" title="Moderate Stock"></div>
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 20%;" title="High Stock"></div>
+                    </div>
+                </div>
+
+                <!-- Filter Pills and Search Bar -->
+                <div class="ge-card p-3 mb-3 bg-white border">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-lg-7">
+                            <div class="d-flex flex-wrap gap-1 align-items-center" id="stockFilterButtonGroup">
+                                <span class="small fw-bold text-muted me-2"><i class="bi bi-funnel me-1"></i>Filter:</span>
+                                <button type="button" class="btn btn-sm btn-dark stock-filter-btn active" onclick="filterStockModal('all', this)">All</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger stock-filter-btn fw-bold" onclick="filterStockModal('Low', this)">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Down Stock (Red)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success stock-filter-btn fw-bold" onclick="filterStockModal('High', this)">
+                                    <i class="bi bi-check-circle-fill me-1"></i>High Stock (Green)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning stock-filter-btn fw-bold" onclick="filterStockModal('Mid', this)">
+                                    Moderate Stock
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary stock-filter-btn" onclick="filterStockModal('Small', this)">Small Bags</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary stock-filter-btn" onclick="filterStockModal('Medium', this)">Medium Bags</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary stock-filter-btn" onclick="filterStockModal('Large', this)">Large Bags</button>
+                            </div>
+                        </div>
+                        <div class="col-lg-5">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control border-start-0" id="stockSearchInput" placeholder="Instant search by bag name or size..." onkeyup="searchStockTable()" />
+                                <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('stockSearchInput').value=''; searchStockTable();" title="Clear">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock Inventory Products Table -->
+                <div class="table-responsive bg-white rounded border shadow-sm">
+                    <table class="table table-hover align-middle mb-0" id="stockInventoryTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 32%;">Plastic Bag Model</th>
+                                <th style="width: 12%;">Size</th>
+                                <th style="width: 20%;">Stock Status</th>
+                                <th style="width: 16%;">Current Units (Pcs)</th>
+                                <th style="width: 20%;" class="text-end">Quick Restock / Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockInventoryTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <div class="spinner-border text-success spinner-border-sm me-2" role="status"></div>
+                                    Loading stock analysis records...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <div class="modal-footer bg-white border-top p-3 px-4 d-flex justify-content-between align-items-center">
+                <div class="small text-muted">
+                    <i class="bi bi-info-circle me-1"></i>Changes made via Quick Restock update the database immediately without page reload.
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i> Print Stock Sheet
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let stockInventoryCache = [];
+        let currentStockFilter = "all";
+
+        document.addEventListener("DOMContentLoaded", function () {
+            let currentPeriod = "day"; // Default: Day
+            let statsData = {
+                day: { amount: @deliveredBenefitToday, formatted: "₹@deliveredBenefitToday.ToString("N0")", count: @deliveredCountToday },
+                month: { amount: @deliveredBenefitMonth, formatted: "₹@deliveredBenefitMonth.ToString("N0")", count: @deliveredCountMonth },
+                year: { amount: @deliveredBenefitYear, formatted: "₹@deliveredBenefitYear.ToString("N0")", count: @deliveredCountYear },
+                all: { amount: @deliveredBenefitAllTime, formatted: "₹@deliveredBenefitAllTime.ToString("N0")", count: @deliveredCountAllTime }
+            };
+
+            const periodNames = {
+                day: "Day (Today)",
+                month: "Monthly (This Month)",
+                year: "Year (This Year)",
+                all: "All Time Cumulative"
+            };
+
+            function updateDisplay() {
+                const valElem = document.getElementById("adminBenefitValue");
+                const badgeElem = document.getElementById("adminPeriodBadge");
+                const countElem = document.getElementById("adminOrdersCountText");
+                const kpiElem = document.getElementById("adminKpiBenefit");
+                if (!valElem) return;
+
+                const selected = statsData[currentPeriod] || statsData.day;
+
+                valElem.classList.add("stat-value-pulse");
+                valElem.innerText = selected.formatted || ("₹" + Number(selected.amount).toLocaleString('en-IN'));
+                if (kpiElem) kpiElem.innerText = valElem.innerText;
+                setTimeout(() => valElem.classList.remove("stat-value-pulse"), 250);
+
+                if (badgeElem) badgeElem.innerText = periodNames[currentPeriod] || currentPeriod;
+                if (countElem) countElem.innerText = (selected.count || 0) + " Delivered Order(s)";
+            }
+
+            // Click on Day, Monthly, Year, All Time
+            document.querySelectorAll(".admin-period-btn").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    document.querySelectorAll(".admin-period-btn").forEach(b => {
+                        b.classList.remove("active", "btn-success");
+                        b.classList.add("btn-outline-success");
+                    });
+                    this.classList.add("active", "btn-success");
+                    this.classList.remove("btn-outline-success");
+
+                    currentPeriod = this.getAttribute("data-period");
+                    updateDisplay();
+                });
+            });
+
+            // Auto Mode: Real-time Polling every 5 seconds
+            async function fetchLatestStats() {
+                try {
+                    const resp = await fetch('/Admin/GetDeliveredBenefitStats');
+                    if (!resp.ok) return;
+                    const data = await resp.json();
+                    if (data && data.success) {
+                        statsData = {
+                            day: data.today,
+                            month: data.month,
+                            year: data.year,
+                            all: data.allTime
+                        };
+
+                        const dayAmt = document.getElementById("adminCardDayAmount");
+                        if (dayAmt) {
+                            dayAmt.innerText = data.today.formatted;
+                            document.getElementById("adminCardDayCount").innerText = data.today.count + " delivered";
+                            document.getElementById("adminCardMonthAmount").innerText = data.month.formatted;
+                            document.getElementById("adminCardMonthCount").innerText = data.month.count + " delivered";
+                            document.getElementById("adminCardYearAmount").innerText = data.year.formatted;
+                            document.getElementById("adminCardYearCount").innerText = data.year.count + " delivered";
+                            document.getElementById("adminCardAllTimeAmount").innerText = data.allTime.formatted;
+                            document.getElementById("adminCardAllTimeCount").innerText = data.allTime.count + " delivered";
+                        }
+
+                        const timeElem = document.getElementById("adminLastUpdated");
+                        if (timeElem) {
+                            timeElem.innerText = "Synced: " + data.lastUpdated;
+                        }
+
+                        const tbody = document.getElementById("adminDeliveredOrdersBody");
+                        if (tbody && data.recentOrders) {
+                            if (data.recentOrders.length === 0) {
+                                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No delivered orders found in database.</td></tr>';
+                            } else {
+                                tbody.innerHTML = data.recentOrders.map(o => `
+                                    <tr>
+                                        <td><strong class="text-primary">${o.orderNumber}</strong></td>
+                                        <td><span class="fw-bold text-dark">${o.customerName}</span></td>
+                                        <td>${o.productName}</td>
+                                        <td>${Number(o.quantity).toLocaleString('en-IN')} <small class="text-muted">pcs</small></td>
+                                        <td><strong class="text-success">${o.amountFormatted}</strong></td>
+                                        <td><small class="text-muted">${o.dateFormatted}</small></td>
+                                        <td><span class="badge bg-success">${o.status}</span></td>
+                                    </tr>
+                                `).join('');
+                            }
+                        }
+
+                        updateDisplay();
+                    }
+                } catch (err) {
+                    console.warn("Admin auto-update stats error:", err);
+                }
+            }
+
+            const refreshBtn = document.getElementById("adminManualRefreshBtn");
+            if (refreshBtn) {
+                refreshBtn.addEventListener("click", function () {
+                    const icon = this.querySelector("i");
+                    if (icon) icon.classList.add("spin");
+                    fetchLatestStats().finally(() => {
+                        if (icon) icon.classList.remove("spin");
+                    });
+                });
+            }
+
+            fetchLatestStats();
+            setInterval(fetchLatestStats, 5000);
+        });
+
+        // Stock Inventory Functions
+        async function loadStockInventory(filter = "all") {
+            currentStockFilter = filter;
+            const tbody = document.getElementById("stockInventoryTableBody");
+            if (!tbody) return;
+
+            try {
+                const resp = await fetch('/Admin/GetStockInventory');
+                if (!resp.ok) throw new Error("Failed to load inventory data");
+                const data = await resp.json();
+                if (data && data.success) {
+                    stockInventoryCache = data.products || [];
+
+                    const totalUnits = document.getElementById("modalTotalStockUnits");
+                    if (totalUnits) totalUnits.innerText = data.totalStockFormatted;
+                    const lowCount = document.getElementById("modalLowStockCount");
+                    if (lowCount) lowCount.innerText = data.lowStockCount;
+                    const midCount = document.getElementById("modalMidStockCount");
+                    if (midCount) midCount.innerText = data.midStockCount;
+                    const highCount = document.getElementById("modalHighStockCount");
+                    if (highCount) highCount.innerText = data.highStockCount;
+
+                    const kpiStock = document.getElementById("adminTotalStockKpi");
+                    if (kpiStock) kpiStock.innerText = data.totalStockFormatted;
+
+                    const pbar = document.getElementById("stockHealthProgressBar");
+                    if (pbar && data.totalProducts > 0) {
+                        const lowPct = (data.lowStockCount * 100 / data.totalProducts).toFixed(1);
+                        const midPct = (data.midStockCount * 100 / data.totalProducts).toFixed(1);
+                        const highPct = (data.highStockCount * 100 / data.totalProducts).toFixed(1);
+                        pbar.innerHTML = `
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: ${lowPct}%;" title="Down Stock: ${lowPct}%"></div>
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: ${midPct}%;" title="Moderate Stock: ${midPct}%"></div>
+                            <div class="progress-bar bg-success" role="progressbar" style="width: ${highPct}%;" title="High Stock: ${highPct}%"></div>
+                        `;
+                    }
+
+                    renderStockTable();
+                }
+            } catch (err) {
+                console.error("Error loading stock inventory:", err);
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3"><i class="bi bi-x-circle me-1"></i>Unable to load stock inventory.</td></tr>`;
+            }
+        }
+
+        function filterStockModal(filter, btn) {
+            currentStockFilter = filter;
+            if (btn) {
+                document.querySelectorAll(".stock-filter-btn").forEach(b => {
+                    b.classList.remove("active", "btn-dark");
+                });
+                btn.classList.add("active", "btn-dark");
+            }
+            renderStockTable();
+        }
+
+        function renderStockTable() {
+            const tbody = document.getElementById("stockInventoryTableBody");
+            if (!tbody) return;
+
+            const query = (document.getElementById("stockSearchInput")?.value || "").toLowerCase().trim();
+
+            let filtered = stockInventoryCache.filter(item => {
+                if (currentStockFilter === "Low" && item.stockLevel !== "Low") return false;
+                if (currentStockFilter === "High" && item.stockLevel !== "High") return false;
+                if (currentStockFilter === "Mid" && item.stockLevel !== "Mid") return false;
+                if (currentStockFilter === "Small" && item.bagSize !== "Small") return false;
+                if (currentStockFilter === "Medium" && item.bagSize !== "Medium") return false;
+                if (currentStockFilter === "Large" && item.bagSize !== "Large") return false;
+
+                if (query.length > 0) {
+                    const matchName = item.name.toLowerCase().includes(query);
+                    const matchSize = item.bagSize.toLowerCase().includes(query);
+                    if (!matchName && !matchSize) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No bag products match the selected stock filter.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => {
+                const isLow = item.stockLevel === "Low";
+                const isHigh = item.stockLevel === "High";
+                const rowClass = isLow ? "stock-row-low" : isHigh ? "stock-row-high" : "";
+                const badgeClass = isLow ? "stock-badge-low" : isHigh ? "stock-badge-high" : "stock-badge-mid";
+                const icon = isLow ? "bi-arrow-down-circle-fill text-danger" : isHigh ? "bi-arrow-up-circle-fill text-success" : "bi-dash-circle text-warning";
+                const label = isLow ? "🔴 DOWN STOCK (LOW)" : isHigh ? "🟢 HIGH STOCK (HEALTHY)" : "🟡 MODERATE STOCK";
+                const barColor = isLow ? "bg-danger" : isHigh ? "bg-success" : "bg-warning";
+                const pct = Math.min(100, Math.max(10, (item.stockQuantity / 40000) * 100));
+
+                return `
+                    <tr class="${rowClass}" id="adminStockRow-${item.id}">
+                        <td>
+                            <strong class="text-dark d-block">${item.name}</strong>
+                            <small class="text-muted">${item.customerPriceFormatted} MRP &bull; ${item.retailerPriceFormatted} Wholesale</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">${item.bagSize}</span>
+                        </td>
+                        <td>
+                            <span class="badge ${badgeClass} px-2 py-1">
+                                <i class="bi ${icon} me-1"></i>${label}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="fw-bold fs-6 ${isLow ? 'text-danger' : isHigh ? 'text-success' : 'text-dark'}">
+                                ${Number(item.stockQuantity).toLocaleString('en-IN')} <small class="text-muted fw-normal">pcs</small>
+                            </div>
+                            <div class="progress mt-1" style="height: 5px;">
+                                <div class="progress-bar ${barColor}" style="width: ${pct}%;"></div>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-1 align-items-center">
+                                <button type="button" class="btn btn-sm btn-outline-success quick-restock-btn" onclick="quickRestockItemAdmin(${item.id}, 5000, 'add')">
+                                    +5k
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success quick-restock-btn" onclick="quickRestockItemAdmin(${item.id}, 10000, 'add')">
+                                    +10k
+                                </button>
+                                <button type="button" class="btn btn-sm btn-light border quick-restock-btn" onclick="promptCustomStockAdmin(${item.id}, ${item.stockQuantity})" title="Set exact stock">
+                                    <i class="bi bi-pencil-square"></i> Set
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function searchStockTable() {
+            renderStockTable();
+        }
+
+        async function quickRestockItemAdmin(productId, amount, operation = "add") {
+            try {
+                const resp = await fetch(`/Admin/QuickUpdateStock?productId=${productId}&quantity=${amount}&operation=${operation}`, {
+                    method: 'POST'
+                });
+                const data = await resp.json();
+                if (data && data.success) {
+                    loadStockInventory(currentStockFilter);
+                } else {
+                    alert(data?.message || "Failed to adjust stock.");
+                }
+            } catch (err) {
+                console.error("Restock error:", err);
+                alert("Network error updating stock.");
+            }
+        }
+
+        function promptCustomStockAdmin(productId, currentVal) {
+            const val = prompt(`Enter new exact warehouse stock quantity (in pcs) for this bag model:`, currentVal);
+            if (val !== null && !isNaN(parseInt(val)) && parseInt(val) >= 0) {
+                quickRestockItemAdmin(productId, parseInt(val), "set");
+            }
+        }
+    </script>
+}

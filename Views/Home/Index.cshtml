@@ -9,7 +9,279 @@
     var businessName = User.FindFirst("BusinessName")?.Value ?? "Retailer Partner";
 }
 
-<!-- Hero Banner -->
+<!-- ADMIN MANAGEMENT QUICK ACTION TOOLBAR (FOR ADMINS ONLY) -->
+@if (isAdmin)
+{
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold px-3 py-1 rounded-pill">
+                <i class="bi bi-shield-lock-fill me-1"></i> Admin Command Center
+            </span>
+            <small class="text-muted d-none d-md-inline">&bull; Click any metric card below to open its management view</small>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-outline-success fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#stockInventoryModal" onclick="loadStockInventory('all')">
+                <i class="bi bi-layers-half me-1"></i> Stock Health Analyzer (Red / Green)
+            </button>
+            <a asp-controller="Admin" asp-action="CreateProduct" class="btn btn-sm btn-outline-primary fw-bold shadow-sm">
+                <i class="bi bi-plus-circle-fill me-1"></i> Add Bag Model
+            </a>
+            <a asp-controller="Admin" asp-action="Orders" class="btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm">
+                <i class="bi bi-receipt me-1"></i> Orders Pipeline
+            </a>
+        </div>
+    </div>
+
+    <!-- DOWN-STOCK ALERT BANNER IF LOW STOCK DETECTED -->
+    @if (Model.LowStockCount > 0)
+    {
+        <div class="alert alert-danger d-flex align-items-center justify-content-between p-2 px-3 rounded-3 mb-3 border-danger-subtle shadow-sm flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-danger text-white"><i class="bi bi-exclamation-triangle-fill me-1"></i>Down Stock Notice</span>
+                <span class="small fw-semibold text-danger">
+                    <strong>@Model.LowStockCount bag model(s)</strong> are below minimum threshold (&lt; 12,000 pcs) and need restocking.
+                </span>
+            </div>
+            <button type="button" class="btn btn-sm btn-danger fw-bold rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#stockInventoryModal" onclick="loadStockInventory('low')">
+                <i class="bi bi-eye-fill me-1"></i> View Down Stock in Red &amp; Restock &rarr;
+            </button>
+        </div>
+    }
+}
+
+<!-- 1. LIVE STAT METRICS & TOTAL BENEFIT WIDGETS (CLICKABLE CARDS) -->
+<section class="row g-3 mb-4">
+    <!-- Card 1: Total Bag Models -->
+    <div class="col-xl-3 col-sm-6">
+        <a asp-controller="Products" asp-action="Index" class="stat-widget stat-widget-clickable border-primary-subtle text-decoration-none d-flex" title="Click to open full product bag catalog">
+            <div class="stat-icon-wrapper stat-icon-blue shadow-sm">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="stat-value text-primary">@Model.TotalProducts</div>
+                <p class="stat-label">Total Bag Models</p>
+                <small class="text-primary fw-semibold d-block mt-1">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Click to view models &rarr;
+                </small>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card 2: Warehouse Stock (Clickable to open Red/Green Stock Analyzer) -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="stat-widget stat-widget-clickable border-success-subtle d-flex" id="warehouseStockCard" role="button" tabindex="0" data-bs-toggle="modal" data-bs-target="#stockInventoryModal" onclick="loadStockInventory('all')" title="Click to inspect all stock: Down Stock in RED, High Stock in GREEN">
+            <div class="stat-icon-wrapper stat-icon-emerald shadow-sm">
+                <i class="bi bi-layers-half"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="stat-value text-dark" id="homeTotalStockValue">@Model.TotalStockUnits.ToString("N0")</div>
+                <p class="stat-label">Warehouse Stock (Pcs)</p>
+                <div class="d-flex align-items-center gap-1 mt-1 flex-wrap">
+                    <span class="badge stock-badge-low px-2 py-0" style="font-size: 0.72rem;" title="Down Stock alert (< 12,000 pcs)">
+                        <i class="bi bi-arrow-down-circle-fill me-1"></i><span id="homeLowStockCount">@Model.LowStockCount</span> Red (Down)
+                    </span>
+                    <span class="badge stock-badge-high px-2 py-0" style="font-size: 0.72rem;" title="High Stock healthy (> 25,000 pcs)">
+                        <i class="bi bi-arrow-up-circle-fill me-1"></i><span id="homeHighStockCount">@Model.HighStockCount</span> Green (High)
+                    </span>
+                </div>
+                <small class="text-success fw-bold d-block mt-1">
+                    <i class="bi bi-hand-index-thumb me-1"></i>Click: Stock Analyzer (Red/Green) &rarr;
+                </small>
+            </div>
+        </div>
+    </div>
+
+    @if (isAdmin)
+    {
+        <!-- Card 3: Total Orders (Clickable to open Orders Pipeline) -->
+        <div class="col-xl-3 col-sm-6">
+            <a asp-controller="Admin" asp-action="Orders" class="stat-widget stat-widget-clickable border-warning-subtle text-decoration-none d-flex" title="Click to open Admin Orders Pipeline">
+                <div class="stat-icon-wrapper stat-icon-amber shadow-sm">
+                    <i class="bi bi-receipt"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="stat-value text-warning-emphasis">@Model.TotalOrders</div>
+                    <p class="stat-label">Total Orders (Admin Only)</p>
+                    <small class="text-warning-emphasis fw-semibold d-block mt-1">
+                        <i class="bi bi-receipt-cutoff me-1"></i>Click to view all orders &rarr;
+                    </small>
+                </div>
+            </a>
+        </div>
+
+        <!-- Card 4: Pending Orders (Clickable to open Pending Orders) -->
+        <div class="col-xl-3 col-sm-6">
+            <a asp-controller="Admin" asp-action="Orders" asp-route-statusFilter="Pending" class="stat-widget stat-widget-clickable border-danger-subtle text-decoration-none d-flex" title="Click to process Pending Orders">
+                <div class="stat-icon-wrapper stat-icon-purple shadow-sm">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="stat-value text-danger">@Model.PendingOrders</div>
+                    <p class="stat-label">Pending Orders (Admin Only)</p>
+                    <small class="text-danger fw-semibold d-block mt-1">
+                        <i class="bi bi-clock-history me-1"></i>Click to process pending &rarr;
+                    </small>
+                </div>
+            </a>
+        </div>
+
+        <!-- Card 5: TOTAL BENEFIT OPTION WIDGET (ADMIN ONLY) -->
+        <div class="col-12 mt-2">
+            <div class="benefit-card-widget p-3 p-md-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    
+                    <!-- Left: Benefit Icon, Title, Value, and Auto Mode Status -->
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrapper stat-icon-green shadow-sm" style="width: 60px; height: 60px; font-size: 1.8rem; border-radius: 14px;">
+                            <i class="bi bi-cash-stack"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                <span class="badge bg-success text-white fw-bold px-2 py-1 rounded-pill" style="font-size: 0.78rem;">
+                                    <i class="bi bi-shield-check me-1"></i> TOTAL BENEFIT (DELIVERED)
+                                </span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill" style="font-size: 0.78rem;" id="homeAutoModeBadge">
+                                    <span class="live-pulse-dot"></span> Auto Mode: Live Active
+                                </span>
+                                <span class="text-muted small" style="font-size: 0.75rem;" id="homeLastUpdated">Syncing...</span>
+                            </div>
+                            <div class="d-flex align-items-baseline gap-2 flex-wrap">
+                                <div class="stat-value text-success stat-value-highlight mb-0" id="homeBenefitValue" style="font-size: 2.2rem;">
+                                    ₹@Model.DeliveredBenefitToday.ToString("N0")
+                                </div>
+                                <span class="badge bg-light text-dark border fw-bold" id="homePeriodBadge">Day (Today)</span>
+                                <small class="text-muted fw-semibold" id="homeBenefitOrdersCount">
+                                    <i class="bi bi-box2-heart text-success me-1"></i><span id="homeOrdersCountText">@Model.DeliveredCountToday Delivered Order(s)</span>
+                                </small>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                <i class="bi bi-arrow-repeat text-success me-1"></i>Delivered completed amount updates in auto mode without page reload.
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Right: Three Options: Day, Monthly, Year (+ All Time) -->
+                    <div class="d-flex flex-column align-items-md-end align-items-start gap-2">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="small fw-bold text-muted"><i class="bi bi-sliders me-1"></i>Click Option:</span>
+                            <div class="btn-group shadow-sm" role="group" aria-label="Benefit Filter Options">
+                                <button type="button" class="btn btn-sm btn-success fw-bold benefit-pill-btn home-period-btn active" data-period="day">
+                                    <i class="bi bi-calendar-check me-1"></i> Day
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success fw-bold benefit-pill-btn home-period-btn" data-period="month">
+                                    <i class="bi bi-calendar-month me-1"></i> Monthly
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success fw-bold benefit-pill-btn home-period-btn" data-period="year">
+                                    <i class="bi bi-calendar3 me-1"></i> Year
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success fw-bold benefit-pill-btn home-period-btn" data-period="all">
+                                    <i class="bi bi-infinity me-1"></i> All Time
+                                </button>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-sm btn-link text-success text-decoration-none p-0 fw-semibold" data-bs-toggle="collapse" data-bs-target="#homeBreakdownCollapse">
+                                <i class="bi bi-table me-1"></i> View Delivered Orders List &amp; Breakdown &darr;
+                            </button>
+                            <span class="text-muted small">|</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill small" id="homeManualRefreshBtn" title="Sync now">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Expandable Delivered Orders Breakdown Table -->
+                <div class="collapse mt-3 pt-3 border-top" id="homeBreakdownCollapse">
+                    <div class="row g-2 mb-3">
+                        <div class="col-6 col-md-3">
+                            <div class="p-2 rounded bg-white border text-center">
+                                <small class="text-muted d-block fw-semibold">📅 Day (Today)</small>
+                                <strong class="text-success fs-6" id="cardDayAmount">₹@Model.DeliveredBenefitToday.ToString("N0")</strong>
+                                <small class="text-muted d-block" id="cardDayCount">@Model.DeliveredCountToday delivered</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="p-2 rounded bg-white border text-center">
+                                <small class="text-muted d-block fw-semibold">📆 Monthly (This Month)</small>
+                                <strong class="text-success fs-6" id="cardMonthAmount">₹@Model.DeliveredBenefitMonth.ToString("N0")</strong>
+                                <small class="text-muted d-block" id="cardMonthCount">@Model.DeliveredCountMonth delivered</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="p-2 rounded bg-white border text-center">
+                                <small class="text-muted d-block fw-semibold">📈 Year (This Year)</small>
+                                <strong class="text-success fs-6" id="cardYearAmount">₹@Model.DeliveredBenefitYear.ToString("N0")</strong>
+                                <small class="text-muted d-block" id="cardYearCount">@Model.DeliveredCountYear delivered</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="p-2 rounded bg-white border text-center">
+                                <small class="text-muted d-block fw-semibold">💼 All Time</small>
+                                <strong class="text-success fs-6" id="cardAllTimeAmount">₹@Model.DeliveredBenefitAllTime.ToString("N0")</strong>
+                                <small class="text-muted d-block" id="cardAllTimeCount">@Model.DeliveredCountAllTime delivered</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive bg-white rounded border">
+                        <table class="table table-sm table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Ref #</th>
+                                    <th>Customer / Business</th>
+                                    <th>Product</th>
+                                    <th>Qty</th>
+                                    <th>Delivered Amount</th>
+                                    <th>Order Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="homeDeliveredOrdersBody">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-2">
+                                        <div class="spinner-border spinner-border-sm text-success me-1" role="status"></div>
+                                        Loading delivered complete orders...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Visitor / Customer secondary specs -->
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-widget">
+                <div class="stat-icon-wrapper stat-icon-amber">
+                    <i class="bi bi-tags-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-value">3 Sizes</div>
+                    <p class="stat-label">Small • Medium • Large</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-sm-6">
+            <div class="stat-widget">
+                <div class="stat-icon-wrapper stat-icon-purple">
+                    <i class="bi bi-patch-check-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-value">100%</div>
+                    <p class="stat-label">Virgin Grade Polymer</p>
+                </div>
+            </div>
+        </div>
+    }
+</section>
+
+<!-- 2. HERO BANNER (SECOND IMAGE - BELOW STAT METRICS & ABOVE EXPLORE BAGS) -->
 <section class="hero-banner mb-4">
     <div class="row align-items-center">
         <div class="col-lg-8">
@@ -38,6 +310,10 @@
                     <a asp-controller="Orders" asp-action="Index" class="btn btn-outline-light fw-bold px-4 py-2">
                         <i class="bi bi-receipt me-2"></i> Customer Orders
                     </a>
+                    <!-- RETAIL ORDERS NEIGHBOR TO CUSTOMER ORDERS -->
+                    <a asp-controller="Admin" asp-action="Orders" asp-route-orderType="Retailer" class="btn btn-outline-warning fw-bold px-4 py-2 text-warning">
+                        <i class="bi bi-shop me-2"></i> Retail Orders
+                    </a>
                 }
                 else if (isRetailer)
                 {
@@ -54,13 +330,20 @@
                         <i class="bi bi-receipt me-2"></i> My Orders (+91 @customerPhone)
                     </a>
                     <a asp-controller="Orders" asp-action="Create" class="btn btn-outline-light fw-bold px-4 py-2">
-                        <i class="bi bi-cart-plus me-2"></i> Place New Order
+                        <i class="bi bi-cart-plus me-2"></i> Customer Order
+                    </a>
+                    <a asp-controller="Account" asp-action="RetailerLogin" class="btn btn-outline-warning fw-bold px-4 py-2 text-warning">
+                        <i class="bi bi-shop me-2"></i> Retail Order
                     </a>
                 }
                 else
                 {
                     <a asp-controller="Orders" asp-action="Create" class="btn btn-outline-light fw-bold px-4 py-2">
-                        <i class="bi bi-cart-plus me-2"></i> Place Order
+                        <i class="bi bi-cart-plus me-2"></i> Customer Order
+                    </a>
+                    <!-- RETAIL ORDER NEIGHBOR TO CUSTOMER ORDER -->
+                    <a asp-controller="Account" asp-action="RetailerLogin" class="btn btn-outline-warning fw-bold px-4 py-2 text-warning">
+                        <i class="bi bi-shop me-2"></i> Retail Order
                     </a>
                     <a asp-controller="Account" asp-action="CustomerLogin" class="btn btn-light fw-bold px-4 py-2">
                         <i class="bi bi-phone me-2"></i> Customer Login
@@ -88,83 +371,7 @@
     </div>
 </section>
 
-<!-- Live Stat Metrics Widgets (Admin sees order volume; Others see manufacturing specs) -->
-<section class="row g-3 mb-4">
-    <div class="col-xl-3 col-sm-6">
-        <div class="stat-widget">
-            <div class="stat-icon-wrapper stat-icon-blue">
-                <i class="bi bi-box-seam"></i>
-            </div>
-            <div>
-                <div class="stat-value">@Model.TotalProducts</div>
-                <p class="stat-label">Total Bag Models</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-sm-6">
-        <div class="stat-widget">
-            <div class="stat-icon-wrapper stat-icon-emerald">
-                <i class="bi bi-layers-half"></i>
-            </div>
-            <div>
-                <div class="stat-value">@Model.TotalStockUnits.ToString("N0")</div>
-                <p class="stat-label">Warehouse Stock (Pcs)</p>
-            </div>
-        </div>
-    </div>
-    @if (isAdmin)
-    {
-        <div class="col-xl-3 col-sm-6">
-            <div class="stat-widget">
-                <div class="stat-icon-wrapper stat-icon-amber">
-                    <i class="bi bi-receipt"></i>
-                </div>
-                <div>
-                    <div class="stat-value">@Model.TotalOrders</div>
-                    <p class="stat-label">Total Orders (Admin Only)</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-sm-6">
-            <div class="stat-widget">
-                <div class="stat-icon-wrapper stat-icon-purple">
-                    <i class="bi bi-hourglass-split"></i>
-                </div>
-                <div>
-                    <div class="stat-value">@Model.PendingOrders</div>
-                    <p class="stat-label">Pending Orders (Admin Only)</p>
-                </div>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="col-xl-3 col-sm-6">
-            <div class="stat-widget">
-                <div class="stat-icon-wrapper stat-icon-amber">
-                    <i class="bi bi-tags-fill"></i>
-                </div>
-                <div>
-                    <div class="stat-value">3 Sizes</div>
-                    <p class="stat-label">Small • Medium • Large</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-sm-6">
-            <div class="stat-widget">
-                <div class="stat-icon-wrapper stat-icon-purple">
-                    <i class="bi bi-patch-check-fill"></i>
-                </div>
-                <div>
-                    <div class="stat-value">100%</div>
-                    <p class="stat-label">Virgin Grade Polymer</p>
-                </div>
-            </div>
-        </div>
-    }
-</section>
-
-<!-- Bag Size Categories Section -->
+<!-- 3. BAG SIZE CATEGORIES SECTION (EXPLORE PLASTIC BAGS BY SIZE) -->
 <section class="mb-5">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
@@ -234,7 +441,7 @@
     </div>
 </section>
 
-<!-- Products & Side Section (Role-based Option Visibility) -->
+<!-- 4. PRODUCTS & SIDE SECTION (ROLE-BASED QUICK PANELS) -->
 <div class="row g-4 mb-4">
     <div class="@(isAdmin ? "col-lg-7" : "col-lg-8")">
         <div class="ge-card shadow-sm border-0">
@@ -283,7 +490,9 @@
                                     ₹@item.CustomerPrice.ToString("F2")
                                 </td>
                                 <td>
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle">@item.StockQuantity.ToString("N0")</span>
+                                    <span class="badge @(item.StockQuantity < 12000 ? "stock-badge-low" : item.StockQuantity > 25000 ? "stock-badge-high" : "stock-badge-mid")">
+                                        @item.StockQuantity.ToString("N0")
+                                    </span>
                                 </td>
                                 <td class="text-end">
                                     @if (isRetailer)
@@ -435,3 +644,479 @@
         }
     </div>
 </div>
+
+<!-- ========================================================================= -->
+<!-- 5. WAREHOUSE STOCK INVENTORY MODAL (RED FOR DOWN STOCK, GREEN FOR HIGH)   -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="stockInventoryModal" tabindex="-1" aria-labelledby="stockInventoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            
+            <div class="modal-header bg-dark text-white p-3 px-4">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="stat-icon-wrapper stat-icon-emerald" style="width: 40px; height: 40px; font-size: 1.25rem;">
+                        <i class="bi bi-layers-half"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="stockInventoryModalLabel">
+                            Warehouse Stock Inventory &amp; Health Analyzer
+                        </h5>
+                        <small class="text-white-50">
+                            Down Stock (<span class="text-danger fw-bold">&lt; 12,000 pcs</span>) shown in <span class="badge bg-danger text-white">RED</span> &bull; High Stock (<span class="text-success fw-bold">&gt; 25,000 pcs</span>) shown in <span class="badge bg-success text-white">GREEN</span>
+                        </small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body p-4 bg-light">
+                
+                <!-- Stock Health KPI Highlights -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3 col-6">
+                        <div class="ge-card p-3 border-start border-4 border-info h-100 bg-white">
+                            <small class="text-muted text-uppercase fw-bold">Total Stock Units</small>
+                            <h3 class="fw-bold text-dark mb-0" id="modalTotalStockUnits">@Model.TotalStockUnits.ToString("N0")</h3>
+                            <small class="text-muted">Across @Model.TotalProducts bag models</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="ge-card p-3 border-start border-4 border-danger h-100 bg-white" role="button" onclick="filterStockModal('Low')">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-danger text-uppercase fw-bold">🔴 Down Stock (Low)</small>
+                                <span class="badge bg-danger text-white">Alert</span>
+                            </div>
+                            <h3 class="fw-bold text-danger mb-0" id="modalLowStockCount">@Model.LowStockCount</h3>
+                            <small class="text-muted">&lt; 12,000 pcs (Click to filter)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="ge-card p-3 border-start border-4 border-warning h-100 bg-white" role="button" onclick="filterStockModal('Mid')">
+                            <small class="text-warning-emphasis text-uppercase fw-bold">🟡 Moderate Stock</small>
+                            <h3 class="fw-bold text-warning-emphasis mb-0" id="modalMidStockCount">@Model.MidStockCount</h3>
+                            <small class="text-muted">12,000 to 25,000 pcs</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <div class="ge-card p-3 border-start border-4 border-success h-100 bg-white" role="button" onclick="filterStockModal('High')">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-success text-uppercase fw-bold">🟢 High Stock (Healthy)</small>
+                                <span class="badge bg-success text-white">Abundant</span>
+                            </div>
+                            <h3 class="fw-bold text-success mb-0" id="modalHighStockCount">@Model.HighStockCount</h3>
+                            <small class="text-muted">&gt; 25,000 pcs (Click to filter)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Stock Health Visual Segmented Meter -->
+                <div class="ge-card p-3 mb-4 bg-white border">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small fw-bold text-dark"><i class="bi bi-pie-chart me-1"></i>Warehouse Stock Health Composition</span>
+                        <div class="small">
+                            <span class="text-danger fw-bold me-2"><i class="bi bi-circle-fill text-danger me-1"></i>Down Stock (Red)</span>
+                            <span class="text-warning fw-bold me-2"><i class="bi bi-circle-fill text-warning me-1"></i>Moderate (Amber)</span>
+                            <span class="text-success fw-bold"><i class="bi bi-circle-fill text-success me-1"></i>High Stock (Green)</span>
+                        </div>
+                    </div>
+                    <div class="progress" style="height: 12px;" id="stockHealthProgressBar">
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: @(Model.TotalProducts > 0 ? (Model.LowStockCount * 100 / Model.TotalProducts) : 0)%;" title="Down Stock"></div>
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: @(Model.TotalProducts > 0 ? (Model.MidStockCount * 100 / Model.TotalProducts) : 0)%;" title="Moderate Stock"></div>
+                        <div class="progress-bar bg-success" role="progressbar" style="width: @(Model.TotalProducts > 0 ? (Model.HighStockCount * 100 / Model.TotalProducts) : 0)%;" title="High Stock"></div>
+                    </div>
+                </div>
+
+                <!-- Filter Pills and Search Bar -->
+                <div class="ge-card p-3 mb-3 bg-white border">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-lg-7">
+                            <div class="d-flex flex-wrap gap-1 align-items-center" id="stockFilterButtonGroup">
+                                <span class="small fw-bold text-muted me-2"><i class="bi bi-funnel me-1"></i>Filter:</span>
+                                <button type="button" class="btn btn-sm btn-dark stock-filter-btn active" onclick="filterStockModal('all', this)">All (@Model.TotalProducts)</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger stock-filter-btn fw-bold" onclick="filterStockModal('Low', this)">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Down Stock (Red)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success stock-filter-btn fw-bold" onclick="filterStockModal('High', this)">
+                                    <i class="bi bi-check-circle-fill me-1"></i>High Stock (Green)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning stock-filter-btn fw-bold" onclick="filterStockModal('Mid', this)">
+                                    Moderate Stock
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary stock-filter-btn" onclick="filterStockModal('Small', this)">Small Bags</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary stock-filter-btn" onclick="filterStockModal('Medium', this)">Medium Bags</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary stock-filter-btn" onclick="filterStockModal('Large', this)">Large Bags</button>
+                            </div>
+                        </div>
+                        <div class="col-lg-5">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control border-start-0" id="stockSearchInput" placeholder="Instant search by bag name or size..." onkeyup="searchStockTable()" />
+                                <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('stockSearchInput').value=''; searchStockTable();" title="Clear">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stock Inventory Products Table -->
+                <div class="table-responsive bg-white rounded border shadow-sm">
+                    <table class="table table-hover align-middle mb-0" id="stockInventoryTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 32%;">Plastic Bag Model</th>
+                                <th style="width: 12%;">Size</th>
+                                <th style="width: 20%;">Stock Status</th>
+                                <th style="width: 16%;">Current Units (Pcs)</th>
+                                <th style="width: 20%;" class="text-end">Quick Restock / Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockInventoryTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <div class="spinner-border text-success spinner-border-sm me-2" role="status"></div>
+                                    Loading stock analysis records...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <div class="modal-footer bg-white border-top p-3 px-4 d-flex justify-content-between align-items-center">
+                <div class="small text-muted">
+                    <i class="bi bi-info-circle me-1"></i>Changes made via Quick Restock update the database immediately without page reload.
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+                        <i class="bi bi-printer me-1"></i> Print Stock Sheet
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- JAVASCRIPT: AUTO MODE, PERIOD SWITCHING & REAL-TIME STOCK ANALYZER        -->
+<!-- ========================================================================= -->
+@section Scripts {
+    <script>
+        let stockInventoryCache = [];
+        let currentStockFilter = "all";
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // ==========================================
+            // 1. TOTAL BENEFIT AUTO-UPDATE CONTROLLER
+            // ==========================================
+            let currentPeriod = "day"; // Default: Day
+            let statsData = {
+                day: { amount: @Model.DeliveredBenefitToday, formatted: "₹@Model.DeliveredBenefitToday.ToString("N0")", count: @Model.DeliveredCountToday },
+                month: { amount: @Model.DeliveredBenefitMonth, formatted: "₹@Model.DeliveredBenefitMonth.ToString("N0")", count: @Model.DeliveredCountMonth },
+                year: { amount: @Model.DeliveredBenefitYear, formatted: "₹@Model.DeliveredBenefitYear.ToString("N0")", count: @Model.DeliveredCountYear },
+                all: { amount: @Model.DeliveredBenefitAllTime, formatted: "₹@Model.DeliveredBenefitAllTime.ToString("N0")", count: @Model.DeliveredCountAllTime }
+            };
+
+            const periodNames = {
+                day: "Day (Today)",
+                month: "Monthly (This Month)",
+                year: "Year (This Year)",
+                all: "All Time Cumulative"
+            };
+
+            function updateDisplay() {
+                const valElem = document.getElementById("homeBenefitValue");
+                const badgeElem = document.getElementById("homePeriodBadge");
+                const countElem = document.getElementById("homeOrdersCountText");
+                if (!valElem) return;
+
+                const selected = statsData[currentPeriod] || statsData.day;
+
+                valElem.classList.add("stat-value-pulse");
+                valElem.innerText = selected.formatted || ("₹" + Number(selected.amount).toLocaleString('en-IN'));
+                setTimeout(() => valElem.classList.remove("stat-value-pulse"), 250);
+
+                if (badgeElem) badgeElem.innerText = periodNames[currentPeriod] || currentPeriod;
+                if (countElem) countElem.innerText = (selected.count || 0) + " Delivered Order(s)";
+            }
+
+            document.querySelectorAll(".home-period-btn").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    document.querySelectorAll(".home-period-btn").forEach(b => {
+                        b.classList.remove("active", "btn-success");
+                        b.classList.add("btn-outline-success");
+                    });
+                    this.classList.add("active", "btn-success");
+                    this.classList.remove("btn-outline-success");
+
+                    currentPeriod = this.getAttribute("data-period");
+                    updateDisplay();
+                });
+            });
+
+            async function fetchLatestStats() {
+                try {
+                    const resp = await fetch('/Home/GetDeliveredBenefitStats');
+                    if (!resp.ok) return;
+                    const data = await resp.json();
+                    if (data && data.success) {
+                        statsData = {
+                            day: data.today,
+                            month: data.month,
+                            year: data.year,
+                            all: data.allTime
+                        };
+
+                        const dayAmt = document.getElementById("cardDayAmount");
+                        if (dayAmt) {
+                            dayAmt.innerText = data.today.formatted;
+                            document.getElementById("cardDayCount").innerText = data.today.count + " delivered";
+                            document.getElementById("cardMonthAmount").innerText = data.month.formatted;
+                            document.getElementById("cardMonthCount").innerText = data.month.count + " delivered";
+                            document.getElementById("cardYearAmount").innerText = data.year.formatted;
+                            document.getElementById("cardYearCount").innerText = data.year.count + " delivered";
+                            document.getElementById("cardAllTimeAmount").innerText = data.allTime.formatted;
+                            document.getElementById("cardAllTimeCount").innerText = data.allTime.count + " delivered";
+                        }
+
+                        const timeElem = document.getElementById("homeLastUpdated");
+                        if (timeElem) timeElem.innerText = "Synced: " + data.lastUpdated;
+
+                        const tbody = document.getElementById("homeDeliveredOrdersBody");
+                        if (tbody && data.recentOrders) {
+                            if (data.recentOrders.length === 0) {
+                                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No delivered orders found in database.</td></tr>';
+                            } else {
+                                tbody.innerHTML = data.recentOrders.map(o => `
+                                    <tr>
+                                        <td><strong class="text-primary">${o.orderNumber}</strong></td>
+                                        <td><span class="fw-bold text-dark">${o.customerName}</span></td>
+                                        <td>${o.productName}</td>
+                                        <td>${Number(o.quantity).toLocaleString('en-IN')} <small class="text-muted">pcs</small></td>
+                                        <td><strong class="text-success">${o.amountFormatted}</strong></td>
+                                        <td><small class="text-muted">${o.dateFormatted}</small></td>
+                                        <td><span class="badge bg-success">${o.status}</span></td>
+                                    </tr>
+                                `).join('');
+                            }
+                        }
+
+                        updateDisplay();
+                    }
+                } catch (err) {
+                    console.warn("Auto-update stats poll error:", err);
+                }
+            }
+
+            const refreshBtn = document.getElementById("homeManualRefreshBtn");
+            if (refreshBtn) {
+                refreshBtn.addEventListener("click", function () {
+                    const icon = this.querySelector("i");
+                    if (icon) icon.classList.add("spin");
+                    fetchLatestStats().finally(() => {
+                        if (icon) icon.classList.remove("spin");
+                    });
+                });
+            }
+
+            fetchLatestStats();
+            setInterval(fetchLatestStats, 5000);
+        });
+
+        // ==========================================
+        // 2. WAREHOUSE STOCK INVENTORY & HEALTH CONTROLLER
+        // Down Stock (< 12,000) = RED, High Stock (> 25,000) = GREEN
+        // ==========================================
+        async function loadStockInventory(filter = "all") {
+            currentStockFilter = filter;
+            const tbody = document.getElementById("stockInventoryTableBody");
+            if (!tbody) return;
+
+            try {
+                const resp = await fetch('/Home/GetStockInventory');
+                if (!resp.ok) throw new Error("Failed to load inventory data");
+                const data = await resp.json();
+                if (data && data.success) {
+                    stockInventoryCache = data.products || [];
+
+                    // Update modal summary cards
+                    const totalUnits = document.getElementById("modalTotalStockUnits");
+                    if (totalUnits) totalUnits.innerText = data.totalStockFormatted;
+                    const lowCount = document.getElementById("modalLowStockCount");
+                    if (lowCount) lowCount.innerText = data.lowStockCount;
+                    const midCount = document.getElementById("modalMidStockCount");
+                    if (midCount) midCount.innerText = data.midStockCount;
+                    const highCount = document.getElementById("modalHighStockCount");
+                    if (highCount) highCount.innerText = data.highStockCount;
+
+                    // Update homepage warehouse card numbers
+                    const homeStock = document.getElementById("homeTotalStockValue");
+                    if (homeStock) homeStock.innerText = data.totalStockFormatted;
+                    const homeLow = document.getElementById("homeLowStockCount");
+                    if (homeLow) homeLow.innerText = data.lowStockCount;
+                    const homeHigh = document.getElementById("homeHighStockCount");
+                    if (homeHigh) homeHigh.innerText = data.highStockCount;
+
+                    // Update segmented progress bar
+                    const pbar = document.getElementById("stockHealthProgressBar");
+                    if (pbar && data.totalProducts > 0) {
+                        const lowPct = (data.lowStockCount * 100 / data.totalProducts).toFixed(1);
+                        const midPct = (data.midStockCount * 100 / data.totalProducts).toFixed(1);
+                        const highPct = (data.highStockCount * 100 / data.totalProducts).toFixed(1);
+                        pbar.innerHTML = `
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: ${lowPct}%;" title="Down Stock: ${lowPct}%"></div>
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: ${midPct}%;" title="Moderate Stock: ${midPct}%"></div>
+                            <div class="progress-bar bg-success" role="progressbar" style="width: ${highPct}%;" title="High Stock: ${highPct}%"></div>
+                        `;
+                    }
+
+                    renderStockTable();
+                }
+            } catch (err) {
+                console.error("Error loading stock inventory:", err);
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3"><i class="bi bi-x-circle me-1"></i>Unable to load stock inventory. Please try again.</td></tr>`;
+            }
+        }
+
+        function filterStockModal(filter, btn) {
+            currentStockFilter = filter;
+            if (btn) {
+                document.querySelectorAll(".stock-filter-btn").forEach(b => {
+                    b.classList.remove("active", "btn-dark");
+                    if (!b.classList.contains("btn-outline-danger") && !b.classList.contains("btn-outline-success") && !b.classList.contains("btn-outline-warning") && !b.classList.contains("btn-outline-secondary")) {
+                        b.classList.add("btn-outline-secondary");
+                    }
+                });
+                btn.classList.add("active", "btn-dark");
+            }
+            renderStockTable();
+        }
+
+        function renderStockTable() {
+            const tbody = document.getElementById("stockInventoryTableBody");
+            if (!tbody) return;
+
+            const query = (document.getElementById("stockSearchInput")?.value || "").toLowerCase().trim();
+
+            let filtered = stockInventoryCache.filter(item => {
+                // Filter by level or size
+                if (currentStockFilter === "Low" && item.stockLevel !== "Low") return false;
+                if (currentStockFilter === "High" && item.stockLevel !== "High") return false;
+                if (currentStockFilter === "Mid" && item.stockLevel !== "Mid") return false;
+                if (currentStockFilter === "Small" && item.bagSize !== "Small") return false;
+                if (currentStockFilter === "Medium" && item.bagSize !== "Medium") return false;
+                if (currentStockFilter === "Large" && item.bagSize !== "Large") return false;
+
+                // Search query
+                if (query.length > 0) {
+                    const matchName = item.name.toLowerCase().includes(query);
+                    const matchSize = item.bagSize.toLowerCase().includes(query);
+                    const matchDesc = (item.description || "").toLowerCase().includes(query);
+                    if (!matchName && !matchSize && !matchDesc) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox me-2"></i>No bag products match the selected stock filter.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => {
+                const isLow = item.stockLevel === "Low";
+                const isHigh = item.stockLevel === "High";
+                const rowClass = isLow ? "stock-row-low" : isHigh ? "stock-row-high" : "";
+                const badgeClass = isLow ? "stock-badge-low" : isHigh ? "stock-badge-high" : "stock-badge-mid";
+                const icon = isLow ? "bi-arrow-down-circle-fill text-danger" : isHigh ? "bi-arrow-up-circle-fill text-success" : "bi-dash-circle text-warning";
+                const label = isLow ? "🔴 DOWN STOCK (LOW)" : isHigh ? "🟢 HIGH STOCK (HEALTHY)" : "🟡 MODERATE STOCK";
+                const barColor = isLow ? "bg-danger" : isHigh ? "bg-success" : "bg-warning";
+                const pct = Math.min(100, Math.max(10, (item.stockQuantity / 40000) * 100));
+
+                return `
+                    <tr class="${rowClass}" id="stockRow-${item.id}">
+                        <td>
+                            <strong class="text-dark d-block">${item.name}</strong>
+                            <small class="text-muted">${item.customerPriceFormatted} MRP &bull; ${item.retailerPriceFormatted} Wholesale</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">${item.bagSize}</span>
+                        </td>
+                        <td>
+                            <span class="badge ${badgeClass} px-2 py-1">
+                                <i class="bi ${icon} me-1"></i>${label}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="fw-bold fs-6 ${isLow ? 'text-danger' : isHigh ? 'text-success' : 'text-dark'}" id="stockQtyText-${item.id}">
+                                ${Number(item.stockQuantity).toLocaleString('en-IN')} <small class="text-muted fw-normal">pcs</small>
+                            </div>
+                            <div class="progress mt-1" style="height: 5px;">
+                                <div class="progress-bar ${barColor}" style="width: ${pct}%;"></div>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-1 align-items-center">
+                                <button type="button" class="btn btn-sm btn-outline-success quick-restock-btn" onclick="quickRestockItem(${item.id}, 5000, 'add')">
+                                    +5k
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-success quick-restock-btn" onclick="quickRestockItem(${item.id}, 10000, 'add')">
+                                    +10k
+                                </button>
+                                <button type="button" class="btn btn-sm btn-light border quick-restock-btn" onclick="promptCustomStock(${item.id}, ${item.stockQuantity})" title="Set exact stock">
+                                    <i class="bi bi-pencil-square"></i> Set
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function searchStockTable() {
+            renderStockTable();
+        }
+
+        async function quickRestockItem(productId, amount, operation = "add") {
+            const btnContainer = document.querySelector(`#stockRow-${productId} td.text-end`);
+            const origHtml = btnContainer ? btnContainer.innerHTML : null;
+            if (btnContainer) {
+                btnContainer.innerHTML = `<span class="spinner-border spinner-border-sm text-success" role="status"></span>`;
+            }
+
+            try {
+                const resp = await fetch(`/Home/QuickUpdateStock?productId=${productId}&quantity=${amount}&operation=${operation}`, {
+                    method: 'POST'
+                });
+                const data = await resp.json();
+                if (data && data.success) {
+                    // Update cache item
+                    const item = stockInventoryCache.find(p => p.id === productId);
+                    if (item) {
+                        item.stockQuantity = data.newStock;
+                        item.stockLevel = data.stockLevel;
+                    }
+
+                    // Reload full analyzer to sync totals
+                    loadStockInventory(currentStockFilter);
+                } else {
+                    alert(data?.message || "Failed to adjust stock.");
+                    if (btnContainer && origHtml) btnContainer.innerHTML = origHtml;
+                }
+            } catch (err) {
+                console.error("Restock error:", err);
+                alert("Network error updating stock. Please try again.");
+                if (btnContainer && origHtml) btnContainer.innerHTML = origHtml;
+            }
+        }
+
+        function promptCustomStock(productId, currentVal) {
+            const val = prompt(`Enter new exact warehouse stock quantity (in pcs) for this bag model:`, currentVal);
+            if (val !== null && !isNaN(parseInt(val)) && parseInt(val) >= 0) {
+                quickRestockItem(productId, parseInt(val), "set");
+            }
+        }
+    </script>
+}
